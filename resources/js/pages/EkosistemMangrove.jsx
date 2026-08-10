@@ -51,14 +51,6 @@ const Ico = {
   ),
 };
 
-/* ── DATA ────────────────────────────────────────────────── */
-const TUJUAN = [
-  "Menjelaskan secara sederhana apa itu ekosistem mangrove.",
-  "Mengidentifikasi komponen biotik dan abiotik dalam ekosistem mangrove.",
-  "Menjelaskan peran beberapa komponen dalam ekosistem mangrove.",
-  "Mengenal beberapa jenis mangrove yang terdapat di Indonesia.",
-  "Menghubungkan karakteristik mangrove dengan kondisi lingkungan tempat hidupnya.",
-];
 
 const HOTSPOTS = [
   {
@@ -221,13 +213,6 @@ html{scroll-behavior:smooth;}
 .section-head{max-width:640px;margin-bottom:36px;}
 .section-head h2{font-size:clamp(1.55rem,2.5vw,2rem);margin-top:10px;}
 .section-head p{color:#4C5F58;margin-top:10px;font-size:.95rem;}
-
-/* ── tujuan ─── */
-.tujuan-card{background:var(--paper);border-radius:var(--r-lg);padding:30px 34px;box-shadow:0 16px 36px -20px rgba(15,36,29,.22);}
-.tujuan-title{font-size:1.5rem;margin-bottom:4px;}
-.tujuan-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(15,36,29,.06);font-size:.92rem;color:#33473F;}
-.tujuan-item:last-child{border-bottom:none;}
-.tujuan-num{font-family:'Space Mono',monospace;font-size:.72rem;color:var(--estuary);font-weight:700;min-width:22px;padding-top:2px;}
 
 /* ── scene / hotspot ─── */
 .scene-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:stretch;}
@@ -676,24 +661,10 @@ export default function EkosistemMangrove() {
           </div>
         </section>
 
-        {/* ── TUJUAN PEMBELAJARAN ── */}
-        <section className="section" style={{ paddingBottom: 24 }}>
-          <div className="em-wrap">
-            <div className="tujuan-card reveal">
-              <h3 className="tujuan-title"> Tujuan Pembelajaran</h3>
-              <p style={{ color: "#4C5F58", marginTop: 10, marginBottom: 16, fontSize: ".9rem" }}>Setelah belajar materi ini, kamu diharapkan dapat:</p>
-              {TUJUAN.map((t, i) => (
-                <div key={i} className="tujuan-item">
-                  <span className="tujuan-num">{i + 1}.</span>
-                  <span>{t}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+
 
         {/* ── SECTION 1 & 2: IDENTIFIKASI KOMPONEN ── */}
-        <section className="section" style={{ paddingTop: 24 }}>
+        <section className="section">
           <div className="em-wrap">
             <div className="section-head reveal">
               <span className="eyebrow">🔍 Aktivitas 1</span>

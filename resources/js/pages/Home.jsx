@@ -50,6 +50,14 @@ const testimonials = [
   },
 ];
 
+const tujuanGoals = [
+  "Mengidentifikasi komponen dan hubungan antar komponen dalam ekosistem mangrove.",
+  "Menganalisis perubahan lingkungan dan hubungan sebab-akibat yang terjadi pada ekosistem mangrove.",
+  "Menjelaskan proses dan dampak abrasi terhadap lingkungan pesisir dan kehidupan masyarakat.",
+  "Menjelaskan fungsi ekologis dan manfaat mangrove bagi masyarakat serta pentingnya pemanfaatan dan konservasi mangrove secara berkelanjutan.",
+  "Memprediksi dan menguji hubungan antara kondisi mangrove dan perlindungan kawasan pesisir melalui Laboratorium Virtual.",
+];
+
 const ArrowIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M5 12h14M13 6l6 6-6 6" />
@@ -528,7 +536,30 @@ export default function Home() {
         .about-float-item b{ font-family:'Space Mono', monospace; color:var(--canopy); font-size:0.95rem; display:block; }
         .about-float-item span{ font-size:0.72rem; color:#5C6F67; line-height:1.25; }
 
-        .showcase{ background:var(--tide-pale); padding:100px 0; }
+        .tujuan{ background:var(--tide-pale); padding:100px 0; }
+        .tujuan-list{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-top:12px; }
+        .tujuan-item{
+          display:flex; align-items:flex-start; gap:16px;
+          background:var(--paper); border-radius:18px; padding:24px 22px;
+          border:1px solid rgba(15,36,29,0.06);
+          box-shadow:0 4px 16px -10px rgba(15,36,29,0.12);
+          transition:transform .3s ease, box-shadow .3s ease;
+        }
+        .tujuan-item:hover{ transform:translateY(-4px); box-shadow:0 16px 28px -16px rgba(15,36,29,0.22); }
+        .tujuan-item:last-child{ grid-column: span 2; }
+        .tujuan-num{
+          width:38px; height:38px; border-radius:50%; flex-shrink:0;
+          background:var(--tide-pale); color:var(--estuary);
+          display:flex; align-items:center; justify-content:center;
+          font-family:'Space Mono', monospace; font-weight:700; font-size:0.95rem;
+        }
+        .tujuan-item p{ font-size:0.94rem; color:#33473F; line-height:1.6; padding-top:6px; }
+        @media (max-width:768px){
+          .tujuan-list{ grid-template-columns:1fr; }
+          .tujuan-item:last-child{ grid-column: span 1; }
+        }
+
+        .showcase{ background:var(--sand); padding:100px 0; }
         .modul-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
         .modul-card{
           display:block;
@@ -849,6 +880,25 @@ export default function Home() {
         <WaveDivider fill="var(--tide-pale)" />
       </section>
 
+      {/* ================= TUJUAN PEMBELAJARAN ================= */}
+      <section className="tujuan" id="tujuan">
+        <div className="container">
+          <div className="section-head center reveal">
+            <span className="eyebrow" style={{ justifyContent: "center" }}>Tujuan pembelajaran</span>
+            <h2>Setelah menggunakan website pembelajaran, siswa diharapkan mampu:</h2>
+          </div>
+          <div className="tujuan-list">
+            {tujuanGoals.map((g, i) => (
+              <div className="tujuan-item reveal" style={{ transitionDelay: `${i * 90}ms` }} key={i}>
+                <span className="tujuan-num">{String(i + 1).padStart(2, "0")}</span>
+                <p>{g}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <WaveDivider fill="var(--sand)" />
+      </section>
+
       {/* ================= FITUR & MATERI ================= */}
       <section className="showcase" id="lab">
         <div className="container">
@@ -924,14 +974,14 @@ export default function Home() {
           </div>
           <div className="mengapa-benefit-grid">
             {mengapaBenefits.map((b, i) => (
-                <div className="mengapa-benefit-card reveal" style={{ transitionDelay: `${i * 90}ms` }} key={b.title}>
-                  <div className="mengapa-benefit-icon">{b.icon}</div>
-                  <h4>{b.title}</h4>
-                  <p>{b.desc}</p>
-                </div>
-              ))}
-            </div>
+              <div className="mengapa-benefit-card reveal" style={{ transitionDelay: `${i * 90}ms` }} key={b.title}>
+                <div className="mengapa-benefit-icon">{b.icon}</div>
+                <h4>{b.title}</h4>
+                <p>{b.desc}</p>
+              </div>
+            ))}
           </div>
+        </div>
         <WaveDivider fill="var(--sand-deep)" />
       </section>
 
