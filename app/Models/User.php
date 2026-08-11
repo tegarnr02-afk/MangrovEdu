@@ -55,4 +55,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Materi1Jawaban::class);
     }
+
+    public function materi2Jawaban()
+    {
+        return $this->hasMany(Materi2Jawaban::class);
+    }
 }

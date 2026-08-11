@@ -32,7 +32,7 @@ class Materi1JawabanController extends Controller
   public function store(Request $request)
   {
     $validator = Validator::make($request->all(), [
-      'item_type' => 'required|in:hotspot,spesies',
+      'item_type' => 'required|in:hotspot,spesies,refleksi',
       'item_id' => 'required|string|max:50',
       'is_correct' => 'required|boolean',
       'nilai' => 'nullable|integer|min:0|max:100',
@@ -84,11 +84,17 @@ class Materi1JawabanController extends Controller
       ->where('is_correct', true)
       ->count();
 
+    $refleksiBenar = Materi1Jawaban::where('user_id', $userId)
+      ->where('item_type', 'refleksi')
+      ->where('is_correct', true)
+      ->count();
+
     return response()->json([
       'success' => true,
       'data' => [
         'hotspot_benar' => $hotspotBenar,
         'spesies_benar' => $spesiesBenar,
+        'refleksi_benar' => $refleksiBenar,
       ],
     ]);
   }

@@ -136,6 +136,13 @@ export default function Materi() {
   // login tidak perlu tahu status progres siapa pun.
   const [completedSlugs, setCompletedSlugs] = useState([]);
 
+  // Status pemuatan progres — dipakai untuk menampilkan indikator
+  // "Memuat progres tersimpan…" supaya user tahu status Selesai/Terkunci
+  // pada tiap kartu masih dalam proses diambil dari server, bukan langsung
+  // final begitu halaman terbuka. Kalau tidak login, tidak ada progres
+  // yang perlu dimuat, jadi mulai dari false.
+  const [loadingProgress, setLoadingProgress] = useState(loggedIn);
+
   useEffect(() => {
     if (!loggedIn) return;
     let mounted = true;
@@ -147,6 +154,9 @@ export default function Materi() {
       })
       .catch((err) => {
         console.error("Gagal memuat progres materi:", err);
+      })
+      .finally(() => {
+        if (mounted) setLoadingProgress(false);
       });
     return () => { mounted = false; };
   }, [loggedIn]);
@@ -313,6 +323,17 @@ export default function Materi() {
         .section-head{ max-width:640px; margin-bottom:52px; }
         .section-head h2{ font-size:clamp(2rem,3.2vw,2.7rem); margin-top:14px; }
         .section-head p{ color:#4C5F58; margin-top:14px; font-size:1.02rem; }
+        .materi-progress-loading{
+          display:inline-flex; align-items:center; gap:8px; margin-top:16px;
+          font-family:'Space Mono', monospace; font-size:0.78rem; font-weight:700;
+          color:var(--estuary); letter-spacing:0.02em;
+        }
+        .materi-progress-spinner{
+          width:13px; height:13px; border-radius:50%;
+          border:2px solid rgba(47,107,87,0.25); border-top-color:var(--estuary);
+          animation:materiSpin 0.7s linear infinite;
+        }
+        @keyframes materiSpin{ to{ transform:rotate(360deg); } }
 
         .materi-index-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
         .materi-index-card{
@@ -468,6 +489,12 @@ export default function Materi() {
             <span className="eyebrow">Pilih modul</span>
             <h2>Lima Topik Utama</h2>
             <p>Setiap modul disusun bertahap — mulai dari pengamatan, pertanyaan pemantik, hingga umpan balik interaktif.</p>
+            {loadingProgress && (
+              <span className="materi-progress-loading">
+                <span className="materi-progress-spinner" aria-hidden="true" />
+                Memuat progres tersimpan…
+              </span>
+            )}
           </div>
           <div className="materi-index-grid">
             {materiWithStatus.map((m, i) => (

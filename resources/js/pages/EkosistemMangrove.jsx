@@ -98,6 +98,8 @@ const HOTSPOTS = [
   },
 ];
 
+const REFL_ITEM_ID = "biotik-abiotik";
+
 const QUIZ_REFL = {
   question: "Apakah komponen biotik dapat hidup tanpa dipengaruhi oleh komponen abiotik di sekitarnya?",
   opts: ["Ya", "Tidak"],
@@ -197,17 +199,23 @@ html{scroll-behavior:smooth;}
 .btn-outline{background:transparent;color:var(--estuary);border:1.5px solid rgba(47,107,87,.3);}
 .btn-outline:hover{background:var(--tide-pale);}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important;}
+.btn-finished:disabled{opacity:1;background:var(--estuary);color:var(--paper);box-shadow:none;}
 .btn-full{width:100%;justify-content:center;}
 
 /* ── banner ─── */
-.page-banner{background:linear-gradient(135deg,#0a1c16 0%,#1a3d2d 60%,#0e2920 100%);padding:130px 0 64px;position:relative;overflow:hidden;}
-.page-banner::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 70% 40%,rgba(47,107,87,.25) 0%,transparent 70%);pointer-events:none;}
-.breadcrumb{display:flex;align-items:center;gap:8px;font-size:.83rem;color:rgba(251,250,245,.6);margin-bottom:16px;}
+.page-banner{background:var(--canopy);padding:130px 0 44px;}
+.breadcrumb{display:flex;align-items:center;gap:8px;font-size:.83rem;color:rgba(251,250,245,.6);margin-bottom:16px;flex-wrap:wrap;}
 .breadcrumb a:hover{color:var(--amber);}
-.breadcrumb .cur{color:rgba(251,250,245,.9);}
+.breadcrumb span.current{color:rgba(251,250,245,.9);}
 .page-banner h1{color:var(--paper);font-size:clamp(1.9rem,3.5vw,2.8rem);max-width:640px;margin-bottom:14px;}
 .page-banner p{color:rgba(251,250,245,.78);max-width:600px;}
-.banner-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(232,163,61,.18);border:1px solid rgba(232,163,61,.4);color:var(--amber);padding:6px 14px;border-radius:999px;font-family:'Space Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:.1em;margin-bottom:20px;}
+
+/* ── materi progress bar (di bawah banner) ─── */
+.materi-progress-wrap{background:var(--canopy);padding:0 0 26px;}
+.materi-progress{display:flex;align-items:center;gap:14px;}
+.materi-progress-label{font-family:'Space Mono',monospace;font-size:.72rem;font-weight:700;color:var(--amber);white-space:nowrap;}
+.materi-progress-track{flex:1;height:6px;border-radius:999px;background:rgba(251,250,245,.14);overflow:hidden;}
+.materi-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--estuary-l),var(--amber));transition:width .5s ease;}
 
 /* ── section ─── */
 .section{padding:68px 0;}
@@ -571,17 +579,32 @@ export default function EkosistemMangrove() {
   /* hotspot state: { [id]: { selected, submitted, isCorrect } } */
   const [hotspotState, setHotspotState] = useState({});
   const [activeHotspot, setActiveHotspot] = useState(null);
-  const visited = Object.keys(hotspotState).filter((k) => hotspotState[k]?.isCorrect);
+  // Hotspot dianggap "selesai" begitu siswa MENJAWAB (submitted) — benar atau
+  // salah tetap terhitung, supaya siswa tidak terjebak harus benar dulu untuk
+  // lanjut. Dicatat di Set terpisah yang permanen (tidak pernah berkurang),
+  // supaya progress tidak "kedip mundur" kalau siswa klik Coba Lagi.
+  const [answeredHotspots, setAnsweredHotspots] = useState(() => new Set());
+  const visited = Array.from(answeredHotspots);
   const allVisited = visited.length === HOTSPOTS.length;
 
   /* reflective quiz */
-  const [reflState, setReflState] = useState({ selected: null, submitted: false });
+  const [reflState, setReflState] = useState({ selected: null, submitted: false, isCorrect: false });
 
   /* species state: { [id]: { selected, submitted, isCorrect, done } } */
   const [speciesState, setSpeciesState] = useState({});
   const [openSpecies, setOpenSpecies] = useState(null);
   const speciesDone = SPECIES.filter((s) => speciesState[s.id]?.done);
   const allSpeciesDone = speciesDone.length === SPECIES.length;
+
+  // Materi 1 dianggap benar-benar selesai hanya jika KETIGA aktivitas tuntas:
+  // eksplorasi 7 hotspot, pertanyaan reflektif dijawab benar, dan galeri 5 spesies.
+  const materiComplete = allVisited && reflState.isCorrect && allSpeciesDone;
+
+  // Progres gabungan untuk progress bar di header (sama seperti Materi 2):
+  // 50% dari eksplorasi hotspot + 50% dari kuis spesies.
+  const materi1ProgressPercent = Math.round(
+    (visited.length / HOTSPOTS.length) * 50 + (speciesDone.length / SPECIES.length) * 50
+  );
 
   /* image lightbox (zoom viewer) */
   const [lightbox, setLightbox] = useState(null); // { src, alt } | null
@@ -594,6 +617,13 @@ export default function EkosistemMangrove() {
      by answering a quiz / marking a card done don't wipe the "show" class when
      React rewrites className. */
   const [revealedSpecies, setRevealedSpecies] = useState(() => new Set());
+
+  /* status tombol "Selesai Materi 1" — dideklarasikan di sini (bukan di
+     dekat handleFinishMateri di bawah) karena effect rehydrate tepat di
+     bawah ini sudah perlu memanggil setMateriFinished; harus terdefinisi
+     duluan supaya tidak kena ReferenceError (temporal dead zone). */
+  const [finishingMateri, setFinishingMateri] = useState(false);
+  const [materiFinished, setMateriFinished] = useState(false);
 
   /* ── rehydrate progres dari database saat halaman dibuka ── */
   const [loadingProgress, setLoadingProgress] = useState(true);
@@ -608,9 +638,12 @@ export default function EkosistemMangrove() {
 
         const hs = {};
         const sp = {};
+        const answeredHs = new Set();
+        let refl = null;
         rows.forEach((row) => {
           if (row.item_type === "hotspot") {
             hs[row.item_id] = { selected: null, submitted: true, isCorrect: !!row.is_correct };
+            answeredHs.add(row.item_id);
           } else if (row.item_type === "spesies") {
             // Baris tersimpan artinya kartu ini sudah pernah dijawab & dieksplorasi,
             // baik jawabannya benar maupun salah (lihat catatan di SpeciesModal:
@@ -621,17 +654,46 @@ export default function EkosistemMangrove() {
               isCorrect: !!row.is_correct,
               done: true,
             };
+          } else if (row.item_type === "refleksi") {
+            // Pertanyaan reflektif — hanya satu soal, jadi cukup ambil baris terakhir.
+            refl = { selected: null, submitted: true, isCorrect: !!row.is_correct };
           }
         });
 
         setHotspotState(hs);
         setSpeciesState(sp);
+        setAnsweredHotspots(answeredHs);
+        if (refl) setReflState(refl);
       })
       .catch((err) => {
         console.error("Gagal memuat progres Materi 1:", err);
       })
       .finally(() => {
         if (mounted) setLoadingProgress(false);
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  /* ── rehydrate status "Materi 1 selesai" dari database ──
+     Dicek terpisah dari jawaban di atas, lewat endpoint yang sama dipakai
+     Materi.jsx (GET /materi/progress → { completed: [slug, ...] }). Kalau
+     slug "ekosistem-mangrove" sudah ada di daftar itu, berarti tombol
+     "Selesai Materi 1" pernah diklik & tersimpan di server sebelumnya —
+     jadi tombolnya langsung tampil sebagai "selesai" meski halaman baru
+     saja di-refresh, bukan reset ke kondisi awal. */
+  useEffect(() => {
+    let mounted = true;
+    api
+      .get("/materi/progress")
+      .then((res) => {
+        if (!mounted) return;
+        const completed = res.data?.completed || [];
+        if (completed.includes("ekosistem-mangrove")) {
+          setMateriFinished(true);
+        }
+      })
+      .catch((err) => {
+        console.error("Gagal memuat status penyelesaian Materi 1:", err);
       });
     return () => { mounted = false; };
   }, []);
@@ -696,10 +758,19 @@ export default function EkosistemMangrove() {
     if (cur.selected === null || cur.selected === undefined) return;
     const isCorrect = cur.selected === h.correct;
     setHotspotState((p) => ({ ...p, [h.id]: { ...cur, submitted: true, isCorrect } }));
+    setAnsweredHotspots((p) => (p.has(h.id) ? p : new Set(p).add(h.id)));
     saveJawaban("hotspot", h.id, isCorrect);
   };
 
   const hsRetry = (id) => setHotspotState((p) => ({ ...p, [id]: { selected: null, submitted: false, isCorrect: false } }));
+
+  /* ── pertanyaan reflektif: simpan seperti hotspot & spesies ── */
+  const reflSubmit = () => {
+    if (reflState.selected === null || reflState.selected === undefined) return;
+    const isCorrect = reflState.selected === QUIZ_REFL.correct;
+    setReflState((p) => ({ ...p, submitted: true, isCorrect }));
+    saveJawaban("refleksi", REFL_ITEM_ID, isCorrect);
+  };
 
   const activeH = HOTSPOTS.find((h) => h.id === activeHotspot);
   const activeHS = activeH ? hsState(activeH.id) : null;
@@ -733,23 +804,30 @@ export default function EkosistemMangrove() {
      mencatat completed_at di tabel user_materi_progress, sehingga Materi 2
      otomatis ter-unlock di halaman daftar materi (Materi.jsx membaca status
      ini lewat GET /materi/progress). Tombol dinonaktifkan sementara request
-     berjalan supaya tidak diklik dobel. */
-  const [finishingMateri, setFinishingMateri] = useState(false);
+     berjalan supaya tidak diklik dobel.
+
+     Berbeda dari sebelumnya: tombol ini TIDAK langsung memindahkan siswa
+     ke daftar materi. Setelah diklik, tombol berubah menjadi status
+     "selesai" (materiFinished) dan siswa tetap di halaman ini. Klik
+     tombol inilah — bukan sekadar menjawab semua kuis dengan benar —
+     yang menjadi syarat untuk membuka navigasi ke Materi 2 di bawah.
+     (State finishingMateri/materiFinished dideklarasikan di atas, dekat
+     effect rehydrate progres, karena effect itu butuh setMateriFinished.) */
 
   const handleFinishMateri = () => {
-    if (finishingMateri) return;
+    if (finishingMateri || materiFinished) return;
     setFinishingMateri(true);
     api
       .post("/materi/ekosistem-mangrove/complete")
       .then(() => {
-        navigate("/materi");
+        setMateriFinished(true);
       })
       .catch((err) => {
         console.error("Gagal menandai Materi 1 selesai:", err);
-        // Tetap izinkan lanjut ke daftar materi meskipun gagal tersimpan,
-        // supaya siswa tidak terjebak di halaman ini — statusnya bisa
-        // menyusul tersimpan saat dicoba ulang lain waktu.
-        navigate("/materi");
+        // Tetap tandai selesai di sisi tampilan supaya siswa tidak terjebak,
+        // meskipun status di server mungkin belum tersimpan — akan tersimpan
+        // ulang saat mereka membuka halaman ini lagi nanti.
+        setMateriFinished(true);
       })
       .finally(() => setFinishingMateri(false));
   };
@@ -766,9 +844,9 @@ export default function EkosistemMangrove() {
             <div className="breadcrumb reveal">
               <Link to="/">Beranda</Link><span>/</span>
               <Link to="/materi">Materi</Link><span>/</span>
-              <span className="cur">Ekosistem Mangrove</span>
+              <span className="current">Ekosistem Mangrove</span>
             </div>
-            <div className="banner-badge reveal">📚 Materi 1 dari 5</div>
+            <span className="eyebrow reveal" style={{ color: "var(--amber)" }}>Materi 1 dari 5</span>
             <h1 className="reveal">Kenali Ekosistem Mangrove</h1>
             <p className="reveal">
               Yuk, kenali kehidupan di ekosistem mangrove! Amati lingkungan di sekitarmu dan temukan berbagai komponen yang ada di dalamnya.
@@ -776,6 +854,18 @@ export default function EkosistemMangrove() {
           </div>
         </section>
 
+        <div className="materi-progress-wrap">
+          <div className="em-wrap">
+            <div className="materi-progress reveal">
+              <span className="materi-progress-label">
+                {loadingProgress ? "Memuat progres tersimpan…" : `Materi 1 — ${materi1ProgressPercent}%`}
+              </span>
+              <div className="materi-progress-track">
+                <div className="materi-progress-fill" style={{ width: `${materi1ProgressPercent}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
 
 
         {/* ── SECTION 1 & 2: IDENTIFIKASI KOMPONEN ── */}
@@ -804,7 +894,7 @@ export default function EkosistemMangrove() {
                   return (
                     <button
                       key={h.id}
-                      className={`hotspot${s.isCorrect ? " visited" : ""}${activeHotspot === h.id ? " active" : ""}`}
+                      className={`hotspot${answeredHotspots.has(h.id) ? " visited" : ""}${activeHotspot === h.id ? " active" : ""}`}
                       style={{ top: h.top, left: h.left }}
                       onClick={() => setActiveHotspot(h.id)}
                       aria-label={h.label}
@@ -849,7 +939,7 @@ export default function EkosistemMangrove() {
             {!allVisited ? (
               <div className="quiz-locked reveal" style={{ marginTop: 28 }}>
                 <Ico.Lock />
-                <span>Temukan dan jawab dengan benar semua <strong>{HOTSPOTS.length} objek</strong> pada ilustrasi di atas untuk membuka pertanyaan reflektif.</span>
+                <span>Temukan dan jawab semua <strong>{HOTSPOTS.length} objek</strong> pada ilustrasi di atas untuk membuka pertanyaan reflektif.</span>
               </div>
             ) : (
               <div className="quiz-box reveal" style={{ marginTop: 28 }}>
@@ -861,13 +951,13 @@ export default function EkosistemMangrove() {
                   state={{
                     selected: reflState.selected,
                     submitted: reflState.submitted,
-                    isCorrect: reflState.submitted && reflState.selected === QUIZ_REFL.correct,
+                    isCorrect: reflState.isCorrect,
                     feedbackOk: QUIZ_REFL.ok,
                     feedbackNo: QUIZ_REFL.no,
                   }}
-                  onSelect={(idx) => !reflState.submitted && setReflState({ selected: idx, submitted: false })}
-                  onSubmit={() => setReflState((p) => ({ ...p, submitted: true }))}
-                  onRetry={() => setReflState({ selected: null, submitted: false })}
+                  onSelect={(idx) => !reflState.submitted && setReflState({ selected: idx, submitted: false, isCorrect: false })}
+                  onSubmit={reflSubmit}
+                  onRetry={() => setReflState({ selected: null, submitted: false, isCorrect: false })}
                 />
               </div>
             )}
@@ -923,7 +1013,7 @@ export default function EkosistemMangrove() {
             </div>
 
             {/* ── SECTION 5: RINGKASAN ── */}
-            {allSpeciesDone && (
+            {materiComplete && (
               <div className="summary-card reveal" style={{ marginTop: 40 }}>
                 <h3>🌊 Ringkasan Ekosistem Mangrove</h3>
                 <div className="summary-cols">
@@ -944,12 +1034,16 @@ export default function EkosistemMangrove() {
                   Setiap komponen dalam ekosistem mangrove saling berkaitan. Kondisi lingkungan seperti air, tanah, dan cahaya dapat memengaruhi kehidupan mangrove dan organisme di sekitarnya.
                 </p>
                 <button
-                  className="btn btn-primary"
+                  className={`btn btn-primary${materiFinished ? " btn-finished" : ""}`}
                   style={{ fontSize: "1rem", padding: "14px 32px" }}
                   onClick={handleFinishMateri}
-                  disabled={finishingMateri}
+                  disabled={finishingMateri || materiFinished}
                 >
-                  {finishingMateri ? "Menyimpan..." : <>🎉 Selesai Materi 1 <Ico.Arrow /></>}
+                  {materiFinished
+                    ? <>✅ Materi Telah Diselesaikan</>
+                    : finishingMateri
+                      ? "Menyimpan..."
+                      : <>🎉 Selesai Materi 1 <Ico.Arrow /></>}
                 </button>
               </div>
             )}
@@ -966,7 +1060,7 @@ export default function EkosistemMangrove() {
               <button
                 className="btn btn-primary"
                 onClick={() => {
-                  if (allSpeciesDone) {
+                  if (materiFinished) {
                     navigate("/materi/interaksi-ekosistem");
                   } else {
                     setShowLockWarning(true);
@@ -1020,9 +1114,10 @@ export default function EkosistemMangrove() {
             <div className="lock-warn-icon"><Ico.Lock /></div>
             <h3>Selesaikan Materi 1 Dulu</h3>
             <p>
-              Jawab semua pertanyaan pada galeri 5 jenis mangrove di atas
-              terlebih dahulu sebelum melanjutkan ke Materi 2: Interaksi
-              Ekosistem.
+              Selesaikan ketiga aktivitas Materi 1 terlebih dahulu — eksplorasi
+              7 komponen ekosistem, pertanyaan reflektif, dan galeri 5 jenis
+              mangrove — lalu klik tombol "Selesai Materi 1" di bagian
+              ringkasan sebelum melanjutkan ke Materi 2: Interaksi Ekosistem.
             </p>
             <button className="btn btn-primary" onClick={() => setShowLockWarning(false)}>
               Mengerti
