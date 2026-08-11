@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../lib/api"; // sesuaikan path jika file ini bukan di src/pages/
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import sceneImg from "./ekosistem-mangrove-scene.png";
@@ -222,7 +223,7 @@ html{scroll-behavior:smooth;}
 .scene-badge{position:absolute;top:14px;right:14px;z-index:4;background:rgba(15,36,29,.82);color:var(--paper);padding:7px 14px;border-radius:14px;font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;display:flex;flex-direction:column;gap:6px;min-width:160px;backdrop-filter:blur(8px);}
 .prog-bar{height:4px;background:rgba(255,255,255,.18);border-radius:99px;overflow:hidden;margin-top:2px;}
 .prog-bar span{display:block;height:100%;background:var(--amber);border-radius:99px;transition:width .4s ease;}
-.scene-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(15,36,29,.78);color:rgba(251,250,245,.9);padding:7px 16px;border-radius:999px;font-size:.76rem;font-weight:600;white-space:nowrap;pointer-events:none;backdrop-filter:blur(6px);animation:hintPulse 2.8s ease-in-out infinite;}
+.scene-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(15,36,29,.78);color:rgba(251,250,245,.9);padding:7px 16px;border-radius:999px;font-size:.62rem;font-weight:600;white-space:nowrap;pointer-events:none;backdrop-filter:blur(6px);animation:hintPulse 2.8s ease-in-out infinite;}
 @keyframes hintPulse{0%,100%{opacity:.8;}50%{opacity:1;}}
 
 .hotspot{position:absolute;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:rgba(251,250,245,.92);border:2.5px solid var(--amber);display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Space Mono',monospace;font-weight:700;font-size:.72rem;color:var(--canopy);animation:pulse 2.2s ease-in-out infinite;transition:background .25s,border-color .25s;}
@@ -328,10 +329,22 @@ html{scroll-behavior:smooth;}
 
 .materi-nav{display:flex;justify-content:space-between;align-items:center;padding-top:30px;border-top:1px solid rgba(15,36,29,.09);flex-wrap:wrap;gap:14px;margin-top:56px;}
 
+/* ── warning modal: Materi 2 masih terkunci ─── */
+.lock-warn-overlay{position:fixed;inset:0;background:rgba(10,20,16,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeOv .25s ease;backdrop-filter:blur(4px);}
+.lock-warn-modal{position:relative;background:var(--paper);border-radius:22px;padding:38px 32px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 44px -18px rgba(15,36,29,.4);animation:popIn .25s ease;}
+@keyframes popIn{from{opacity:0;transform:translateY(12px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+.lock-warn-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border:none;border-radius:50%;background:var(--sand-deep);color:var(--canopy);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.lock-warn-close svg{width:16px;height:16px;}
+.lock-warn-icon{width:56px;height:56px;margin:0 auto 18px;border-radius:50%;background:#FBEEDA;color:var(--amber-d);display:flex;align-items:center;justify-content:center;}
+.lock-warn-icon svg{width:26px;height:26px;}
+.lock-warn-modal h3{font-size:1.3rem;margin-bottom:10px;}
+.lock-warn-modal p{color:#556961;font-size:.92rem;line-height:1.6;margin-bottom:26px;}
+.lock-warn-modal .btn{width:100%;justify-content:center;}
+
 /* ── responsive ─── */
 @media(max-width:980px){.scene-wrap{grid-template-columns:1fr;}.species-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:768px){.page-banner{padding:110px 0 44px;}.section{padding:50px 0;}.tujuan-card{padding:22px 20px;}.info-panel{min-height:auto;}.quiz-box{padding:22px 18px;}.summary-cols{grid-template-columns:1fr;}}
-@media(max-width:600px){.em-wrap{padding:0 18px;}.species-grid{grid-template-columns:1fr;}.materi-nav{flex-direction:column;align-items:stretch;}.summary-card{padding:28px 20px;}.sp-zoom-btn{opacity:1;transform:translateY(0);}.lightbox-caption{top:16px;left:16px;font-size:.9rem;}.lightbox-hint{display:none;}}
+@media(max-width:600px){.em-wrap{padding:0 18px;}.species-grid{grid-template-columns:1fr;}.materi-nav{flex-direction:column;align-items:stretch;}.summary-card{padding:28px 20px;}.sp-zoom-btn{opacity:1;transform:translateY(0);}.lightbox-caption{top:16px;left:16px;font-size:.9rem;}.lightbox-hint{display:none;}.scene-badge{top:8px;right:8px;padding:4px 9px;font-size:.58rem;min-width:104px;gap:3px;border-radius:10px;}.prog-bar{height:3px;margin-top:1px;}}
 `;
 
 /* ── QuizOptions helper ─────────────────────────────────── */
@@ -364,11 +377,6 @@ function QuizOptions({ opts, correct, state, onSelect, onSubmit, onRetry }) {
             {isCorrect ? <Ico.Check /> : <Ico.X />}
             <span>{isCorrect ? state.feedbackOk : state.feedbackNo}</span>
           </div>
-          {!isCorrect && (
-            <button className="btn btn-outline" style={{ marginTop: 10 }} onClick={onRetry}>
-              Coba Lagi <Ico.Arrow />
-            </button>
-          )}
         </>
       )}
     </div>
@@ -398,10 +406,24 @@ function ImageLightbox({ img, alt, onClose }) {
     });
   };
 
-  const handleWheel = (e) => {
-    e.preventDefault();
-    zoomStep(-e.deltaY * 0.0018);
-  };
+  /* handleWheel dipasang manual via addEventListener({ passive:false })
+     bukan lewat prop React onWheel, karena React 17+ mendaftarkan event
+     wheel/touch sebagai passive secara default di root listener demi
+     performa scroll browser. Kalau tetap pakai onWheel, preventDefault()
+     di bawah ini diabaikan browser dan muncul warning
+     "Unable to preventDefault inside passive event listener invocation". */
+  const overlayRef = useRef(null);
+
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    const onWheelNative = (e) => {
+      e.preventDefault();
+      zoomStep(-e.deltaY * 0.0018);
+    };
+    el.addEventListener("wheel", onWheelNative, { passive: false });
+    return () => el.removeEventListener("wheel", onWheelNative);
+  }, []);
 
   const toggleZoom = (e) => {
     e.stopPropagation();
@@ -429,9 +451,9 @@ function ImageLightbox({ img, alt, onClose }) {
 
   return (
     <div
+      ref={overlayRef}
       className="lightbox-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}
-      onWheel={handleWheel}
     >
       <button className="lightbox-close" onClick={onClose} aria-label="Tutup">
         <Ico.X />
@@ -492,7 +514,7 @@ function SpeciesModal({ sp, quizState, onSelect, onSubmit, onRetry, onMarkDone, 
         <div className="modal-body">
           <h3>{sp.nama}</h3>
 
-          {!isCorrect ? (
+          {!submitted ? (
             <>
               <p className="info-q">{sp.question}</p>
               <QuizOptions
@@ -503,8 +525,9 @@ function SpeciesModal({ sp, quizState, onSelect, onSubmit, onRetry, onMarkDone, 
           ) : (
             <>
               {!isDone && (
-                <div className="feedback ok" style={{ marginBottom: 16 }}>
-                  <Ico.Check /><span>{sp.ok}</span>
+                <div className={`feedback ${isCorrect ? "ok" : "no"}`} style={{ marginBottom: 16 }}>
+                  {isCorrect ? <Ico.Check /> : <Ico.X />}
+                  <span>{isCorrect ? sp.ok : sp.no}</span>
                 </div>
               )}
               <div className="info-tab-bar">
@@ -523,7 +546,7 @@ function SpeciesModal({ sp, quizState, onSelect, onSubmit, onRetry, onMarkDone, 
             </>
           )}
         </div>
-        {isCorrect && (
+        {submitted && (
           <div className="modal-footer">
             {!isDone ? (
               <button className="btn btn-primary btn-full" onClick={onMarkDone}>
@@ -563,11 +586,55 @@ export default function EkosistemMangrove() {
   /* image lightbox (zoom viewer) */
   const [lightbox, setLightbox] = useState(null); // { src, alt } | null
 
+  /* modal peringatan saat tombol "Materi 2" diklik sebelum Materi 1 selesai */
+  const [showLockWarning, setShowLockWarning] = useState(false);
+
   /* which species cards have already played their reveal-on-scroll animation.
      Tracked in React state (not just a DOM class) so that re-renders triggered
      by answering a quiz / marking a card done don't wipe the "show" class when
      React rewrites className. */
   const [revealedSpecies, setRevealedSpecies] = useState(() => new Set());
+
+  /* ── rehydrate progres dari database saat halaman dibuka ── */
+  const [loadingProgress, setLoadingProgress] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    api
+      .get("/materi1/jawaban")
+      .then((res) => {
+        if (!mounted) return;
+        const rows = res.data?.data || [];
+
+        const hs = {};
+        const sp = {};
+        rows.forEach((row) => {
+          if (row.item_type === "hotspot") {
+            hs[row.item_id] = { selected: null, submitted: true, isCorrect: !!row.is_correct };
+          } else if (row.item_type === "spesies") {
+            // Baris tersimpan artinya kartu ini sudah pernah dijawab & dieksplorasi,
+            // baik jawabannya benar maupun salah (lihat catatan di SpeciesModal:
+            // jawaban salah tetap membuka tab penjelasan, bukan hanya jawaban benar).
+            sp[row.item_id] = {
+              selected: null,
+              submitted: true,
+              isCorrect: !!row.is_correct,
+              done: true,
+            };
+          }
+        });
+
+        setHotspotState(hs);
+        setSpeciesState(sp);
+      })
+      .catch((err) => {
+        console.error("Gagal memuat progres Materi 1:", err);
+      })
+      .finally(() => {
+        if (mounted) setLoadingProgress(false);
+      });
+    return () => { mounted = false; };
+  }, []);
 
   /* reveal on scroll */
   useEffect(() => {
@@ -590,9 +657,28 @@ export default function EkosistemMangrove() {
 
   /* lock body scroll when modal or lightbox open */
   useEffect(() => {
-    document.body.style.overflow = (openSpecies || lightbox) ? "hidden" : "";
+    document.body.style.overflow = (openSpecies || lightbox || showLockWarning) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [openSpecies, lightbox]);
+  }, [openSpecies, lightbox, showLockWarning]);
+
+  /* ── simpan jawaban ke database ──
+     Endpoint POST ini disamakan dengan bentuk data dari endpoint GET
+     yang sudah ada (/materi1/jawaban → item_type, item_id, is_correct).
+     Ini yang sebelumnya HILANG, sehingga jawaban hanya tersimpan di
+     state React (hilang begitu halaman di-refresh). Kalau route
+     penyimpanan di backend Laravel-mu berbeda, tinggal sesuaikan
+     URL/payload di sini. */
+  const saveJawaban = (itemType, itemId, isCorrect) => {
+    api
+      .post("/materi1/jawaban", {
+        item_type: itemType,
+        item_id: itemId,
+        is_correct: isCorrect,
+      })
+      .catch((err) => {
+        console.error(`Gagal menyimpan jawaban (${itemType}:${itemId}):`, err);
+      });
+  };
 
   /* ── hotspot handlers ── */
   const hsState = (id) => hotspotState[id] || { selected: null, submitted: false, isCorrect: false };
@@ -610,6 +696,7 @@ export default function EkosistemMangrove() {
     if (cur.selected === null || cur.selected === undefined) return;
     const isCorrect = cur.selected === h.correct;
     setHotspotState((p) => ({ ...p, [h.id]: { ...cur, submitted: true, isCorrect } }));
+    saveJawaban("hotspot", h.id, isCorrect);
   };
 
   const hsRetry = (id) => setHotspotState((p) => ({ ...p, [id]: { selected: null, submitted: false, isCorrect: false } }));
@@ -633,11 +720,39 @@ export default function EkosistemMangrove() {
     if (cur.selected === null || cur.selected === undefined) return;
     const isCorrect = cur.selected === s.correct;
     setSpeciesState((p) => ({ ...p, [s.id]: { ...cur, submitted: true, isCorrect } }));
+    saveJawaban("spesies", s.id, isCorrect);
   };
 
   const spRetry = (id) => setSpeciesState((p) => ({ ...p, [id]: { selected: null, submitted: false, isCorrect: false, done: false } }));
 
   const spMarkDone = (id) => setSpeciesState((p) => ({ ...p, [id]: { ...p[id], done: true } }));
+
+  /* ── tandai Materi 1 selesai ──
+     Dipanggil saat tombol "Selesai Materi 1" diklik. Manggil endpoint
+     POST /materi/{slug}/complete (lihat MateriProgressController) yang akan
+     mencatat completed_at di tabel user_materi_progress, sehingga Materi 2
+     otomatis ter-unlock di halaman daftar materi (Materi.jsx membaca status
+     ini lewat GET /materi/progress). Tombol dinonaktifkan sementara request
+     berjalan supaya tidak diklik dobel. */
+  const [finishingMateri, setFinishingMateri] = useState(false);
+
+  const handleFinishMateri = () => {
+    if (finishingMateri) return;
+    setFinishingMateri(true);
+    api
+      .post("/materi/ekosistem-mangrove/complete")
+      .then(() => {
+        navigate("/materi");
+      })
+      .catch((err) => {
+        console.error("Gagal menandai Materi 1 selesai:", err);
+        // Tetap izinkan lanjut ke daftar materi meskipun gagal tersimpan,
+        // supaya siswa tidak terjebak di halaman ini — statusnya bisa
+        // menyusul tersimpan saat dicoba ulang lain waktu.
+        navigate("/materi");
+      })
+      .finally(() => setFinishingMateri(false));
+  };
 
   return (
     <>
@@ -828,8 +943,13 @@ export default function EkosistemMangrove() {
                 <p className="summary-note">
                   Setiap komponen dalam ekosistem mangrove saling berkaitan. Kondisi lingkungan seperti air, tanah, dan cahaya dapat memengaruhi kehidupan mangrove dan organisme di sekitarnya.
                 </p>
-                <button className="btn btn-primary" style={{ fontSize: "1rem", padding: "14px 32px" }} onClick={() => navigate("/materi")}>
-                  🎉 Selesai Materi 1 <Ico.Arrow />
+                <button
+                  className="btn btn-primary"
+                  style={{ fontSize: "1rem", padding: "14px 32px" }}
+                  onClick={handleFinishMateri}
+                  disabled={finishingMateri}
+                >
+                  {finishingMateri ? "Menyimpan..." : <>🎉 Selesai Materi 1 <Ico.Arrow /></>}
                 </button>
               </div>
             )}
@@ -843,9 +963,18 @@ export default function EkosistemMangrove() {
               <Link to="/materi">
                 <button className="btn btn-outline"><Ico.ArrowL /> Kembali ke Materi</button>
               </Link>
-              <Link to="/materi/interaksi-ekosistem">
-                <button className="btn btn-primary">Materi 2: Interaksi Ekosistem <Ico.Arrow /></button>
-              </Link>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  if (allSpeciesDone) {
+                    navigate("/materi/interaksi-ekosistem");
+                  } else {
+                    setShowLockWarning(true);
+                  }
+                }}
+              >
+                Materi 2: Interaksi Ekosistem <Ico.Arrow />
+              </button>
             </div>
           </div>
         </section>
@@ -879,6 +1008,27 @@ export default function EkosistemMangrove() {
           alt={lightbox.alt}
           onClose={() => setLightbox(null)}
         />
+      )}
+
+      {/* ── PERINGATAN: MATERI 2 MASIH TERKUNCI ── */}
+      {showLockWarning && (
+        <div className="lock-warn-overlay" onClick={() => setShowLockWarning(false)}>
+          <div className="lock-warn-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="lock-warn-close" onClick={() => setShowLockWarning(false)} aria-label="Tutup">
+              <Ico.X />
+            </button>
+            <div className="lock-warn-icon"><Ico.Lock /></div>
+            <h3>Selesaikan Materi 1 Dulu</h3>
+            <p>
+              Jawab semua pertanyaan pada galeri 5 jenis mangrove di atas
+              terlebih dahulu sebelum melanjutkan ke Materi 2: Interaksi
+              Ekosistem.
+            </p>
+            <button className="btn btn-primary" onClick={() => setShowLockWarning(false)}>
+              Mengerti
+            </button>
+          </div>
+        </div>
       )}
     </>
   );

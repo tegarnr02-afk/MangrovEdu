@@ -75,12 +75,17 @@ export default function Navbar({ forceSolid = false }) {
           transition:padding .35s ease;
         }
         header.navbar.scrolled .nav-inner{ padding:14px 32px; }
-        .logo{
+        .logo,
+        .logo:link,
+        .logo:visited{
           display:flex; align-items:center; gap:10px;
-          font-family:'Fraunces', serif; font-weight:700; font-size:1.3rem; color:var(--paper);
+          font-family:'Fraunces', serif; font-weight:700; font-size:1.3rem;
+          color:var(--paper) !important;
           transition:color .35s ease;
         }
-        header.navbar.scrolled .logo{ color:var(--canopy); }
+        header.navbar.scrolled .logo,
+        header.navbar.scrolled .logo:link,
+        header.navbar.scrolled .logo:visited{ color:var(--canopy) !important; }
         .logo-icon{ width:52px; height:52px; object-fit:contain; flex-shrink:0; }
         .nav-links{
           display:flex; align-items:center; gap:34px;

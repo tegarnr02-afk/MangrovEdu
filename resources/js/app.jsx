@@ -33,7 +33,16 @@ function PageLoader() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("app")).render(
+/* Guard untuk Vite HMR: kalau app.jsx di-reload ulang oleh dev server
+   tanpa unmount root lama dulu, createRoot() kedua di container yang
+   sama bikin error "createRoot() called on a container that has
+   already been passed" + "removeChild" NotFoundError. Simpan root di
+   elemen DOM-nya sendiri supaya reload berikutnya reuse root yang sama
+   (root.render() lagi), bukan bikin root baru. */
+const container = document.getElementById("app");
+const root = container._reactRoot ?? (container._reactRoot = ReactDOM.createRoot(container));
+
+root.render(
   <BrowserRouter>
     <Suspense fallback={<PageLoader />}>
       <Routes>

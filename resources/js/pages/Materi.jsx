@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import api from "../lib/api"; // sesuaikan path jika file ini bukan di src/pages/
 import heroBg from "./hero-mangrove.png";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -126,27 +127,45 @@ export default function Materi() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [lockedItem, setLockedItem] = useState(null); // { title, prevTitle } | null
 
-  // Progres yang sudah diselesaikan user, per slug materi.
-  // Sementara masih dibaca dari localStorage sebagai placeholder —
-  // nanti tinggal ganti bagian ini dengan hasil GET /api/materi/progress
-  // (bentuk datanya tetap array of slug string, jadi sisanya tidak perlu diubah).
-  const [completedSlugs] = useState(() => {
-    try {
-      const raw = localStorage.getItem("materiProgress");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-
   const isLoggedIn = () => !!localStorage.getItem("token");
   const loggedIn = isLoggedIn();
+
+  // Progres materi yang sudah diselesaikan user, diambil dari
+  // GET /materi/progress (lihat MateriProgressController@index).
+  // Hanya di-fetch kalau user sudah login — pengunjung yang belum
+  // login tidak perlu tahu status progres siapa pun.
+  const [completedSlugs, setCompletedSlugs] = useState([]);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    let mounted = true;
+    api
+      .get("/materi/progress")
+      .then((res) => {
+        if (!mounted) return;
+        setCompletedSlugs(res.data?.completed || []);
+      })
+      .catch((err) => {
+        console.error("Gagal memuat progres materi:", err);
+      });
+    return () => { mounted = false; };
+  }, [loggedIn]);
 
   // Sebelum login: semua kartu tampil polos dengan warna aslinya, tanpa
   // badge "Terkunci"/"Selesai" — status progres memang belum relevan buat
   // pengunjung yang belum masuk. Setelah login, baru status locked/completed
   // dihitung: materi ke-0 selalu terbuka, materi ke-N baru terbuka kalau
   // materi ke-(N-1) sudah ada di daftar completedSlugs.
+  // Kartu materi mana saja yang sudah pernah "muncul" lewat animasi scroll
+  // reveal. Dilacak lewat React state (bukan cuma classList.add manual),
+  // karena className kartu ini dibangun dinamis dari status locked/completed
+  // yang berubah setelah progres selesai di-fetch dari server. Kalau cuma
+  // mengandalkan classList manual, re-render akibat perubahan status itu
+  // akan menimpa className dan menghapus class "show" yang sudah ditambahkan,
+  // membuat kartu jadi transparan (bug yang sempat terjadi pada kartu
+  // Materi 2 begitu progres Materi 1 selesai di-fetch).
+  const [revealedCards, setRevealedCards] = useState(() => new Set());
+
   const materiWithStatus = materiList.map((m, i) => {
     const prevMateri = i > 0 ? materiList[i - 1] : null;
     const completed = loggedIn && completedSlugs.includes(m.slug);
@@ -173,14 +192,19 @@ export default function Materi() {
     navigate("/login");
   };
 
-  // Scroll reveal — identik dengan pola di Home.jsx
+  // Scroll reveal — identik dengan pola di Home.jsx, plus pelacakan
+  // revealedCards khusus untuk kartu materi (lihat komentar di atas).
   useEffect(() => {
-    const revealEls = document.querySelectorAll(".reveal");
+    const revealEls = document.querySelectorAll(".reveal:not(.show)");
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
           if (e.isIntersecting) {
             e.target.classList.add("show");
+            const cardIndex = e.target.dataset.cardIndex;
+            if (cardIndex !== undefined) {
+              setRevealedCards((prev) => (prev.has(cardIndex) ? prev : new Set(prev).add(cardIndex)));
+            }
             io.unobserve(e.target);
           }
         });
@@ -449,8 +473,9 @@ export default function Materi() {
             {materiWithStatus.map((m, i) => (
               <Link
                 to={m.href}
-                className={`materi-index-card reveal${m.locked ? " is-locked" : ""}`}
+                className={`materi-index-card reveal${revealedCards.has(String(i)) ? " show" : ""}${m.locked ? " is-locked" : ""}`}
                 key={i}
+                data-card-index={i}
                 onClick={handleMateriClick(m)}
                 aria-disabled={m.locked}
                 style={{ transitionDelay: `${i * 90}ms`, "--accent": m.accent, "--accent-bg": m.accentBg }}

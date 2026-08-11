@@ -47,7 +47,12 @@ class User extends Authenticatable
     }
 
     public function materiProgress()
-{
-    return $this->hasMany(MateriProgress::class);
-}
+    {
+        return $this->hasMany(MateriProgress::class);
+    }
+
+    public function materi1Jawaban()
+    {
+        return $this->hasMany(Materi1Jawaban::class);
+    }
 }
