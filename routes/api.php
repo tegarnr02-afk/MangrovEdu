@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MateriProgressController;
 use App\Http\Controllers\Api\Materi1JawabanController;
 use App\Http\Controllers\Api\Materi2JawabanController;
+use App\Http\Controllers\Api\Materi3JawabanController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -22,4 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/materi2/jawaban', [Materi2JawabanController::class, 'index']);
     Route::post('/materi2/jawaban', [Materi2JawabanController::class, 'store']);
+
+    Route::get('/materi3/jawaban', [Materi3JawabanController::class, 'index']);
+Route::post('/materi3/jawaban', [Materi3JawabanController::class, 'store']);
+Route::get('/materi3/summary', [Materi3JawabanController::class, 'summary']);
 });

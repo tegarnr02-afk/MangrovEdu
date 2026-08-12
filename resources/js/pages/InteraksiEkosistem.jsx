@@ -1105,7 +1105,6 @@ export default function InteraksiEkosistem() {
                       onDragEnd={handleDragEnd}
                     >
                       <span className="emoji">{c.emoji}</span>
-                      <span className="role">{c.role}</span>
                       <span className="label">{c.label}</span>
                     </div>
                   );
@@ -1114,14 +1113,13 @@ export default function InteraksiEkosistem() {
 
               <div className="chain-slots">
                 {slots.map((filledId, i) => {
-                  const roleLabel = chainCards.find((c) => c.id === correctOrder[i])?.role;
                   const filled = filledId ? cardById(filledId) : null;
                   let slotClass = "";
                   if (chainSubmitted) slotClass = filledId === correctOrder[i] ? " correct-slot" : " wrong-slot";
                   return (
                     <React.Fragment key={i}>
                       <div className="chain-slot-wrap">
-                        <span className="chain-slot-role">{roleLabel}</span>
+                        <span className="chain-slot-role">Posisi {i + 1}</span>
                         <div
                           className={`chain-slot${filled ? " filled" : ""}${slotClass}${dragOverSlot === i ? " drag-over" : ""}`}
                           onClick={() => onSlotClick(i)}
@@ -1133,6 +1131,7 @@ export default function InteraksiEkosistem() {
                             <div draggable={!locked} onDragStart={(e) => handleDragStart(filledId, e)} onDragEnd={handleDragEnd}>
                               <span className="filled-emoji">{filled.emoji}</span>
                               <span className="filled-label">{filled.label}</span>
+
                             </div>
                           ) : (
                             <span className="placeholder">?</span>
