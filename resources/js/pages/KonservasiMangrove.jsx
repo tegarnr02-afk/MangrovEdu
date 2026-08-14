@@ -74,25 +74,56 @@ const FUNGSI = [
   },
   {
     id: "perlindungan", emoji: "🌊", label: "Perlindungan Pesisir", color: "#2F6B57", bg: "#D6EAE1",
-    desc: "Selain ikan dan kepiting, mangrove juga menjadi tempat tinggal khusus bagi berbagai jenis keong, salah satunya keong Potamididae.",
-    detail: "Penelitian di kawasan mangrove Probolinggo, Jawa Timur, menemukan bahwa keong ini hanya bisa hidup jika ada vegetasi mangrove di sekitarnya. Hal ini menunjukkan eratnya hubungan antara mangrove dan kelangsungan hidup hewan-hewan kecil di pesisir.",
-    anim: null,
+    desc: "Akar dan batang mangrove yang rapat berfungsi seperti benteng alami di tepi pantai. Ketika gelombang laut datang, kerapatan hutan mangrove membantu memecah dan meredam energi gelombang sebelum mencapai daratan.",
+    detail: "Semakin lebar dan lebat hutan mangrove, semakin besar pula kemampuannya melindungi wilayah pesisir dari abrasi dan gelombang besar.",
+    anim: ["🌊 Gelombang", "🌱🌱🌱 Mangrove", "🛡️ Energi gelombang berkurang", "🏝️ Daratan terlindungi"],
   },
   {
     id: "penyimpanan", emoji: "🌍", label: "Penyimpanan Karbon", color: "#C24A5F", bg: "#F8E4E7",
-    desc: "Akar dan batang mangrove yang rapat berfungsi seperti benteng alami di tepi pantai. Ketika gelombang laut datang, kerapatan hutan mangrove membantu memecah dan meredam energi gelombang sebelum mencapai daratan. Semakin lebar dan lebat hutan mangrove, semakin besar pula kemampuannya melindungi wilayah pesisir dari abrasi dan gelombang besar.",
+    desc: "Informasi mengenai penyimpanan karbon pada materi ini belum dijelaskan secara rinci.",
     detail: null,
-    anim: ["🌊 Gelombang", "🌱🌱🌱 Mangrove", "🛡️ Energi gelombang berkurang", "🏖️ Daratan terlindungi"],
+    anim: null,
+    /* Keong Potamididae — organisme pesisir yang erat kaitannya dengan mangrove */
+    keong: {
+      title: "Keong Potamididae",
+      desc: "Penelitian di kawasan mangrove Probolinggo, Jawa Timur, menemukan bahwa keong Potamididae hanya bisa hidup jika ada vegetasi mangrove di sekitarnya.",
+      konklusi: "Hal ini menunjukkan eratnya hubungan antara mangrove dan kelangsungan hidup hewan-hewan kecil di pesisir.",
+    },
   },
 ];
 
 /* ===== DATA: MANFAAT BAGI MASYARAKAT ===== */
 const MANFAAT = [
-  { id: "obat", emoji: "💊", nama: "Pemanfaatan sebagai obat", bg: "#FBEEDA", accent: "#C97C1E" },
-  { id: "madu", emoji: "🍯", nama: "Lebah madu hutan mangrove", bg: "#FDF0D5", accent: "#CE8324" },
-  { id: "selai", emoji: "🍓", nama: "Selai buah mangrove", bg: "#F8E4E7", accent: "#C24A5F" },
-  { id: "tepung", emoji: "🌾", nama: "Tepung buah mangrove", bg: "#F1EFE3", accent: "#A9784F" },
-  { id: "kopi", emoji: "☕", nama: "Produk kopi mangrove", bg: "#E4E2EA", accent: "#6C63B5" },
+  {
+    id: "obat", emoji: "💊", nama: "Pemanfaatan sebagai obat",
+    img: "/images/materi5/obat-mangrove.webp",
+    desc: "Berbagai bagian tumbuhan mangrove telah dimanfaatkan oleh masyarakat sebagai bahan obat-obatan tradisional.",
+    bg: "#FBEEDA", accent: "#C97C1E",
+  },
+  {
+    id: "madu", emoji: "🍯", nama: "Lebah madu hutan mangrove",
+    img: "/images/materi5/madu-mangrove.webp",
+    desc: "Kawasan hutan mangrove menjadi habitat bagi lebah madu sehingga menghasilkan madu hutan mangrove yang dapat dimanfaatkan oleh masyarakat.",
+    bg: "#FDF0D5", accent: "#CE8324",
+  },
+  {
+    id: "selai", emoji: "🍓", nama: "Selai buah mangrove",
+    img: "/images/materi5/selai-mangrove.webp",
+    desc: "Buah mangrove dapat diolah menjadi selai sebagai salah satu produk pangan hasil pemanfaatan mangrove oleh masyarakat.",
+    bg: "#F8E4E7", accent: "#C24A5F",
+  },
+  {
+    id: "tepung", emoji: "🌾", nama: "Tepung buah mangrove",
+    img: "/images/materi5/tepung-mangrove.webp",
+    desc: "Buah mangrove dapat diolah menjadi tepung sebagai bahan pangan alternatif hasil pemanfaatan mangrove oleh masyarakat.",
+    bg: "#F1EFE3", accent: "#A9784F",
+  },
+  {
+    id: "kopi", emoji: "☕", nama: "Produk kopi mangrove",
+    img: "/images/materi5/kopi-mangrove.webp",
+    desc: "Biji atau bagian tertentu dari tanaman mangrove dapat diolah menjadi produk kopi sebagai salah satu bentuk pemanfaatan mangrove oleh masyarakat.",
+    bg: "#E4E2EA", accent: "#6C63B5",
+  },
 ];
 
 /* ===== DATA: PREDIKSI RISIKO ABRASI ===== */
@@ -676,6 +707,16 @@ export default function KonservasiMangrove() {
                         <p>{f.desc}</p>
                         {f.detail && <p className="impact-sub">{f.detail}</p>}
                         {f.anim && <AnimChain steps={f.anim} style={{ maxWidth: "100%", margin: "18px 0 0" }} />}
+                        {f.keong && (
+                          <div className="keong-subcard">
+                            <div className="keong-subcard-head">
+                              <span className="keong-subcard-icon">🐚</span>
+                              <strong>{f.keong.title}</strong>
+                            </div>
+                            <p>{f.keong.desc}</p>
+                            <p className="keong-subcard-konklusi">{f.keong.konklusi}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -779,17 +820,40 @@ export default function KonservasiMangrove() {
               <h2>Hubungan Fungsi Mangrove</h2>
               <p>Setiap fungsi mangrove saling berkaitan dengan keberlangsungan ekosistem dan kehidupan di wilayah pesisir.</p>
             </div>
-            <div className="chain-visual reveal">
-              <div className="chain-box highlight">🌱 Ekosistem Mangrove</div>
-              <div className="chain-arrow"><ArrowIcon /></div>
-              <div className="chain-box">📍 Fungsi & Manfaat Mangrove</div>
-              <div className="chain-arrow"><ArrowIcon /></div>
-              <div className="chain-leaf">
-                {HUB.map((h) => (
-                  <div key={h.id} className="chain-leaf-item" style={{ color: h.color, borderColor: h.color, background: h.bg }}>
-                    <span className="chain-leaf-emoji">{h.icon}</span> {h.label}
+            {/* Tree / branch concept map */}
+            <div className="konsep-tree reveal">
+              {/* Root node */}
+              <div className="konsep-root">
+                <div className="konsep-root-box">🌱 Ekosistem Mangrove</div>
+              </div>
+              {/* Connector line root → branches */}
+              <div className="konsep-vline" />
+              {/* Branch nodes */}
+              <div className="konsep-branches">
+                {/* Branch 1 — Habitat Organisme */}
+                <div className="konsep-branch">
+                  <div className="konsep-branch-box" style={{ borderColor: "#3D8267", background: "#E1EAE2", color: "#3D8267" }}>
+                    <span>🐟</span>
+                    <strong>Habitat Organisme</strong>
                   </div>
-                ))}
+                  <div className="konsep-branch-leaf">Kepiting &amp; organisme pesisir</div>
+                </div>
+                {/* Branch 2 — Perlindungan Pesisir */}
+                <div className="konsep-branch">
+                  <div className="konsep-branch-box" style={{ borderColor: "#2F6B57", background: "#D6EAE1", color: "#2F6B57" }}>
+                    <span>🌊</span>
+                    <strong>Perlindungan Pesisir</strong>
+                  </div>
+                  <div className="konsep-branch-leaf">Mengurangi dampak gelombang dan abrasi</div>
+                </div>
+                {/* Branch 3 — Manfaat Masyarakat */}
+                <div className="konsep-branch">
+                  <div className="konsep-branch-box" style={{ borderColor: "#E8A33D", background: "#FDF0D5", color: "#CE8324" }}>
+                    <span>👥</span>
+                    <strong>Manfaat Masyarakat</strong>
+                  </div>
+                  <div className="konsep-branch-leaf">Produk &amp; pemanfaatan masyarakat</div>
+                </div>
               </div>
             </div>
           </div>
@@ -900,10 +964,19 @@ export default function KonservasiMangrove() {
         <div className="impact-modal-overlay" onClick={() => setOpenProduk(null)}>
           <div className="impact-modal" onClick={(e) => e.stopPropagation()} style={{ "--produk-bg": openProduk.bg, "--produk-accent": openProduk.accent }}>
             <button className="impact-modal-close" onClick={() => setOpenProduk(null)} aria-label="Tutup"><CloseIcon /></button>
-            <div className="produk-modal-emoji">{openProduk.emoji}</div>
+            {/* Gambar produk dengan fallback emoji */}
+            <div className="produk-modal-img-wrap">
+              <img
+                src={openProduk.img}
+                alt={openProduk.nama}
+                className="produk-modal-img"
+                onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }}
+              />
+              <div className="produk-modal-emoji" style={{ display: "none" }}>{openProduk.emoji}</div>
+            </div>
             <h3>{openProduk.nama}</h3>
-            <p>Hasil pemanfaatan mangrove oleh masyarakat.</p>
-            <button className="btn btn-outline btn-sm" onClick={() => setOpenProduk(null)}>Tutup</button>
+            {openProduk.desc && <p className="produk-modal-desc">{openProduk.desc}</p>}
+            <button className="btn btn-outline btn-sm" style={{ marginTop: 18 }} onClick={() => setOpenProduk(null)}>Tutup</button>
           </div>
         </div>
       )}
@@ -1030,6 +1103,23 @@ const STYLES = `
   .impact-modal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border:none;border-radius:50%;background:var(--sand-deep);cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .impact-modal h3{font-size:1.2rem;margin:14px 0 10px;}
   .impact-modal p{font-size:0.92rem;color:#33473F;line-height:1.65;}
+  .produk-modal-img-wrap{width:100%;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:var(--produk-bg);margin-bottom:4px;}
+  .produk-modal-img{width:100%;height:100%;object-fit:cover;display:block;}
+  .produk-modal-desc{margin-top:6px;font-size:0.9rem;color:#33473F;line-height:1.65;}
+
+  /* ===== Peta Konsep Tree ===== */
+  .konsep-tree{display:flex;flex-direction:column;align-items:center;margin:28px auto;max-width:780px;}
+  .konsep-root{display:flex;justify-content:center;}
+  .konsep-root-box{background:linear-gradient(135deg,var(--tide-pale),var(--sand));border:2px solid var(--estuary);border-radius:16px;padding:16px 36px;font-size:1rem;font-weight:700;color:var(--canopy);box-shadow:0 8px 20px -10px rgba(47,107,87,0.35);text-align:center;}
+  .konsep-vline{width:2px;height:32px;background:rgba(47,107,87,0.3);margin:0 auto;}
+  .konsep-branches{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;width:100%;position:relative;}
+  .konsep-branches::before{content:"";position:absolute;top:0;left:calc(50% - 1px);width:2px;height:0;}
+  .konsep-branch{display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;min-width:180px;max-width:240px;}
+  .konsep-branch-box{border:2px solid;border-radius:14px;padding:14px 16px;font-size:0.88rem;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;width:100%;box-shadow:0 4px 14px -8px rgba(15,36,29,0.18);transition:transform .2s ease,box-shadow .2s ease;}
+  .konsep-branch-box:hover{transform:translateY(-3px);box-shadow:0 10px 22px -10px rgba(15,36,29,0.28);}
+  .konsep-branch-box span{font-size:1.5rem;}
+  .konsep-branch-leaf{background:var(--paper);border-radius:10px;padding:10px 14px;font-size:0.8rem;color:#4C5F58;text-align:center;line-height:1.5;width:100%;border:1px solid rgba(15,36,29,0.08);box-shadow:0 2px 8px -6px rgba(15,36,29,0.12);}
+  @media(max-width:600px){.konsep-branches{flex-direction:column;align-items:center;}.konsep-branch{min-width:240px;max-width:100%;}}
 
   /* ===== Temukan perbedaan (Materi 5) ===== */
   .spot-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
@@ -1068,7 +1158,14 @@ const STYLES = `
   .produk-card:hover .produk-emoji{transform:scale(1.1) rotate(-4deg);}
   .produk-nama{font-size:0.9rem;font-weight:700;color:var(--canopy);text-align:center;line-height:1.35;}
   .produk-zoom{font-size:0.72rem;font-weight:600;color:var(--silt);}
-  .produk-modal-emoji{width:80px;height:80px;margin:0 auto 18px;border-radius:20px;background:var(--produk-bg);display:flex;align-items:center;justify-content:center;font-size:2.6rem;}
+  .produk-modal-emoji{width:100%;aspect-ratio:4/3;border-radius:16px;background:var(--produk-bg);display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:4px;}
+  /* ===== sub-card Keong Potamididae ===== */
+  .keong-subcard{margin-top:14px;background:var(--sand);border-radius:14px;padding:16px 18px;border:1.5px solid rgba(47,107,87,0.15);display:flex;flex-direction:column;gap:8px;}
+  .keong-subcard-head{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .keong-subcard-icon{font-size:1.4rem;}
+  .keong-subcard-head strong{font-size:0.9rem;color:var(--canopy);}
+  .keong-subcard p{font-size:0.85rem;color:#33473F;line-height:1.6;margin:0;}
+  .keong-subcard-konklusi{font-style:italic;color:var(--estuary)!important;}
 
   @media(max-width:980px){.spot-grid{grid-template-columns:1fr;}.summary-cards{grid-template-columns:1fr;}.produk-grid{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:768px){.page-banner{padding:110px 0 44px;}.section{padding:50px 0;}.quiz-box{padding:24px 20px;}.impact-detail-inner{padding-left:20px;}}
