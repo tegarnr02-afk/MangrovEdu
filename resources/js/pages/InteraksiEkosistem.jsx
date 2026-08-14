@@ -289,6 +289,9 @@ export default function InteraksiEkosistem() {
   /* ---- Peringatan Materi 2 belum selesai (saat mau lanjut ke Materi 3) ---- */
   const [showLockWarning, setShowLockWarning] = useState(false);
 
+  /* ---- Pesan error asli kalau POST /materi/.../complete gagal ---- */
+  const [finishError, setFinishError] = useState(null);
+
   /* Derived values needed by useEffect deps — must be declared BEFORE the effect */
   const stage1Done = visitedHotspots.size === hotspots.length;
   const stage2Done = visitedRelations.size === relations.length;
@@ -600,6 +603,7 @@ export default function InteraksiEkosistem() {
   const handleFinishMateri = () => {
     if (finishingMateri || materiFinished) return;
     setFinishingMateri(true);
+    setFinishError(null);
     api
       .post("/materi/interaksi-ekosistem/complete")
       .then(() => {
@@ -607,10 +611,16 @@ export default function InteraksiEkosistem() {
       })
       .catch((err) => {
         console.error("Gagal menandai Materi 2 selesai:", err);
-        // Tetap tandai selesai di sisi tampilan supaya siswa tidak terjebak,
-        // meskipun status di server mungkin belum tersimpan — akan tersimpan
-        // ulang saat mereka membuka halaman ini lagi nanti.
-        setMateriFinished(true);
+        // TIDAK menandai selesai di sisi tampilan kalau request gagal — supaya
+        // status di layar selalu mencerminkan status sebenarnya di server.
+        setFinishError(
+          err?.response?.data?.message ||
+            (err?.response?.status === 404
+              ? "Endpoint /materi/interaksi-ekosistem/complete tidak ditemukan (404)."
+              : err?.response
+              ? `Gagal menyimpan (HTTP ${err.response.status}).`
+              : "Tidak bisa terhubung ke server.")
+        );
       })
       .finally(() => setFinishingMateri(false));
   };
@@ -1213,6 +1223,11 @@ export default function InteraksiEkosistem() {
                     ? "Menyimpan..."
                     : <>🎉 Selesai Materi 2 <ArrowIcon /></>}
               </button>
+              {finishError && (
+                <p style={{ color: "var(--danger)", fontSize: "0.85rem", marginTop: 10 }}>
+                  ⚠️ {finishError} Coba klik tombolnya lagi, atau cek console browser (F12) untuk detail.
+                </p>
+              )}
             </div>
           </div>
         </section>

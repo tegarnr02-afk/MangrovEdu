@@ -617,26 +617,6 @@ export default function PerubahanLingkungan() {
     };
   }, []);
 
-  // Rehydrate status "Materi 3 selesai" dari backend, supaya tombol/badge
-  // "Selesai Materi 3" tidak balik ke kondisi awal tiap kali halaman di-refresh
-  // padahal materi ini sudah pernah ditandai selesai sebelumnya.
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get("/materi/progress")
-      .then(({ data }) => {
-        if (cancelled) return;
-        const completed = data?.completed || [];
-        if (completed.includes("perubahan-lingkungan")) {
-          setMateriFinished(true);
-        }
-      })
-      .catch((err) => console.error("Gagal memuat status Materi 3:", err));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const fenomenaAllDone = FENOMENA_ORDER.every((k) => fState[k].done);
   const reflCorrect = reflSubmitted && reflSelected === 0;
   const maxUnlockedIdx = 3 + (fenomenaAllDone ? 1 : 0) + (dragChecked ? 1 : 0) + (reflSubmitted ? 1 : 0);
@@ -792,9 +772,11 @@ export default function PerubahanLingkungan() {
      yang mencatat completed_at di tabel user_materi_progress, supaya Materi 4
      otomatis ter-unlock di daftar materi. Tombol dinonaktifkan sementara request
      berjalan supaya tidak diklik dobel. */
+  const [finishError, setFinishError] = useState(null);
   const handleFinishMateri = () => {
     if (finishingMateri || materiFinished) return;
     setFinishingMateri(true);
+    setFinishError(null);
     api
       .post("/materi/perubahan-lingkungan/complete")
       .then(() => {
@@ -802,9 +784,16 @@ export default function PerubahanLingkungan() {
       })
       .catch((err) => {
         console.error("Gagal menandai Materi 3 selesai:", err);
-        // Tetap tandai selesai di sisi tampilan supaya siswa tidak terjebak,
-        // meskipun status di server mungkin belum tersimpan.
-        setMateriFinished(true);
+        // TIDAK menandai selesai di sisi tampilan kalau request gagal — supaya
+        // status di layar selalu mencerminkan status sebenarnya di server.
+        setFinishError(
+          err?.response?.data?.message ||
+            (err?.response?.status === 404
+              ? "Endpoint /materi/perubahan-lingkungan/complete tidak ditemukan (404)."
+              : err?.response
+              ? `Gagal menyimpan (HTTP ${err.response.status}).`
+              : "Tidak bisa terhubung ke server.")
+        );
       })
       .finally(() => setFinishingMateri(false));
   };
@@ -1546,6 +1535,11 @@ export default function PerubahanLingkungan() {
                     ? "Menyimpan..."
                     : <>🎉 Selesai Materi 3 <ArrowIcon /></>}
               </button>
+              {finishError && (
+                <p style={{ color: "var(--danger)", fontSize: "0.85rem", marginTop: 10 }}>
+                  ⚠️ {finishError} Coba klik tombolnya lagi, atau cek console browser (F12) untuk detail.
+                </p>
+              )}
             </div>
           </section>
         )}
