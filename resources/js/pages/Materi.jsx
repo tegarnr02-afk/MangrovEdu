@@ -127,6 +127,13 @@ export default function Materi() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [lockedItem, setLockedItem] = useState(null); // { title, prevTitle } | null
 
+  // Notifikasi toast singkat saat user klik kartu materi ketika progres
+  // dari server (GET /materi/progress) masih dalam proses dimuat — supaya
+  // status locked/completed belum bisa dipastikan dulu, jadi klik ditahan
+  // dan user diberi tahu untuk menunggu sebentar, bukan langsung dianggap
+  // "terkunci" (yang salah, karena completedSlugs masih kosong sementara).
+  const [showLoadingToast, setShowLoadingToast] = useState(false);
+
   const isLoggedIn = () => !!localStorage.getItem("token");
   const loggedIn = isLoggedIn();
 
@@ -189,6 +196,14 @@ export default function Materi() {
       setShowLoginModal(true);
       return;
     }
+    if (loadingProgress) {
+      // Progres belum selesai dimuat — status locked/completed kartu ini
+      // belum bisa dipercaya, jadi tahan navigasi dan tampilkan toast
+      // singkat alih-alih modal "terkunci" yang bisa salah.
+      e.preventDefault();
+      setShowLoadingToast(true);
+      return;
+    }
     if (item.locked) {
       e.preventDefault();
       setLockedItem(item);
@@ -196,6 +211,13 @@ export default function Materi() {
     }
     // Sudah login & tidak terkunci → biarkan Link navigasi seperti biasa
   };
+
+  // Toast otomatis hilang setelah beberapa detik.
+  useEffect(() => {
+    if (!showLoadingToast) return;
+    const t = setTimeout(() => setShowLoadingToast(false), 2500);
+    return () => clearTimeout(t);
+  }, [showLoadingToast]);
 
   const goToLogin = () => {
     setShowLoginModal(false);
@@ -334,6 +356,19 @@ export default function Materi() {
           animation:materiSpin 0.7s linear infinite;
         }
         @keyframes materiSpin{ to{ transform:rotate(360deg); } }
+
+        /* ===== Toast notifikasi "masih memuat" ===== */
+        .materi-toast{
+          position:fixed; left:50%; bottom:32px; transform:translateX(-50%) translateY(0);
+          display:inline-flex; align-items:center; gap:10px;
+          background:var(--canopy); color:var(--paper);
+          padding:13px 20px; border-radius:12px; font-size:0.86rem; font-weight:600;
+          box-shadow:0 10px 30px rgba(15,36,29,0.25); z-index:200;
+          animation:materiToastIn 0.25s ease;
+        }
+        .materi-toast .materi-progress-spinner{ border-color:rgba(251,250,245,0.25); border-top-color:var(--amber); }
+        @keyframes materiToastIn{ from{ opacity:0; transform:translateX(-50%) translateY(12px); } to{ opacity:1; transform:translateX(-50%) translateY(0); } }
+
 
         .materi-index-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
         .materi-index-card{
@@ -568,6 +603,13 @@ export default function Materi() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showLoadingToast && (
+        <div className="materi-toast" role="status">
+          <span className="materi-progress-spinner" aria-hidden="true" />
+          Progres masih dimuat, mohon tunggu sebentar…
         </div>
       )}
 

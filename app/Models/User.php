@@ -60,4 +60,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(Materi2Jawaban::class);
     }
+
+    public function materi3Jawaban()
+    {
+        return $this->hasMany(Materi3Jawaban::class);
+    }
+
+    public function materi4Jawaban()
+    {
+        return $this->hasMany(Materi4Jawaban::class);
+    }
+
+    public function materi5Jawaban()
+    {
+        return $this->hasMany(Materi5Jawaban::class);
+    }
 }

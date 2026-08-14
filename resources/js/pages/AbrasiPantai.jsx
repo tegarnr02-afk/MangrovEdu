@@ -461,6 +461,10 @@ export default function AbrasiPantai() {
   const [finishError, setFinishError] = useState(null);
   const [showLock, setShowLock] = useState(false);
 
+  // Status loading progres tersimpan — true sampai GET /materi4/jawaban selesai,
+  // dipakai untuk menampilkan "Memuat progres tersimpan…" di label progress.
+  const [loadingProgress, setLoadingProgress] = useState(true);
+
   // Progress: 7 milestones each 1/7
   const pct =
     Math.round((
@@ -473,6 +477,70 @@ export default function AbrasiPantai() {
       (finished ? 1 : 0)
     ) / 7 * 100);
 
+  // ── rehydrate semua jawaban tersimpan dari database saat halaman dibuka ──
+  // Tanpa ini, qaSelected/slots/linked/reflSelected selalu mulai kosong lagi
+  // tiap kali halaman di-refresh, walau datanya sudah ada di server.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/materi4/jawaban")
+      .then(({ data }) => {
+        if (cancelled) return;
+        const rows = data?.data || [];
+
+        rows.forEach((row) => {
+          const detail = row.detail || {};
+          if (row.item_type === "mcq" && row.item_id === "penyebab-abrasi") {
+            setQaSelected(detail.selected ?? null);
+            setQaSubmitted(true);
+          } else if (row.item_type === "drag" && row.item_id === "susun-proses") {
+            if (Array.isArray(detail.urutan)) {
+              setSlots(detail.urutan);
+              setPool([]);
+              setDndChecked(true);
+            }
+          } else if (row.item_type === "koneksi") {
+            if (row.item_id === "anim-viewed") {
+              setAnimViewed(true);
+            } else if (row.item_id.startsWith("lihat-")) {
+              const realId = row.item_id.replace("lihat-", "");
+              setVisitedImpact((prev) => new Set(prev).add(realId));
+            } else {
+              setLinked((prev) => new Set(prev).add(row.item_id));
+            }
+          } else if (row.item_type === "refleksi" && row.item_id === "kesimpulan") {
+            setReflSelected(detail.selected ?? null);
+            setReflSubmitted(true);
+          }
+        });
+      })
+      .catch((err) => console.error("Gagal memuat progres Materi 4:", err))
+      .finally(() => {
+        if (!cancelled) setLoadingProgress(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ── rehydrate status "Materi 4 selesai" dari database ──
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/materi/progress")
+      .then((res) => {
+        if (cancelled) return;
+        const completed = res.data?.completed || [];
+        if (completed.includes("abrasi-pantai")) {
+          setFinished(true);
+        }
+      })
+      .catch((err) => console.error("Gagal memuat status penyelesaian Materi 4:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     const els = document.querySelectorAll(".reveal");
     const io = new IntersectionObserver(entries => {
@@ -483,6 +551,15 @@ export default function AbrasiPantai() {
   });
 
   useEffect(() => () => { if (animRef.current) clearInterval(animRef.current); }, []);
+
+  // Tandai animasi sudah ditonton sampai selesai, dan simpan ke server
+  // (hanya sekali per sesi, biar tidak spam request tiap klik ulang).
+  const markAnimViewed = () => {
+    setAnimViewed(prev => {
+      if (!prev) saveJawaban("koneksi", "anim-viewed", { label: "Animasi proses abrasi" }, true);
+      return true;
+    });
+  };
 
   const playAnim = () => {
     if (animPlaying) return;
@@ -496,7 +573,7 @@ export default function AbrasiPantai() {
         clearInterval(animRef.current);
         animRef.current = null;
         setAnimPlaying(false);
-        setAnimViewed(true);
+        markAnimViewed();
         return;
       }
       setAnimStage(s);
@@ -514,13 +591,13 @@ export default function AbrasiPantai() {
   const goToStage = (i) => {
     pauseAnim();
     setAnimStage(i);
-    if (i === 3) setAnimViewed(true);
+    if (i === 3) markAnimViewed();
   };
   const nextStage = () => {
     pauseAnim();
     setAnimStage(prev => {
       const n = Math.min(prev + 1, 3);
-      if (n === 3) setAnimViewed(true);
+      if (n === 3) markAnimViewed();
       return n;
     });
   };
@@ -607,15 +684,49 @@ export default function AbrasiPantai() {
     moveCardToPool(id);
     setDraggingId(null);
   };
-  const submitDnd = () => { if (allSlotsFilled) setDndChecked(true); };
+  const submitDnd = () => {
+    if (!allSlotsFilled) return;
+    setDndChecked(true);
+    saveJawaban("drag", "susun-proses", { urutan: slots }, isOrderCorrect);
+  };
 
   const handleImpact = (item) => {
     setActiveImpact(prev => (prev?.id === item.id ? null : item));
-    setVisitedImpact(prev => new Set(prev).add(item.id));
+    setVisitedImpact(prev => {
+      if (prev.has(item.id)) return prev; // sudah pernah dilihat, jangan kirim ulang
+      saveJawaban("koneksi", `lihat-${item.id}`, { label: item.label }, true);
+      return new Set(prev).add(item.id);
+    });
   };
 
+  // Simpan satu jawaban pertanyaan ke server (upsert per item_type + item_id).
+  // Dibuat "fire-and-forget" supaya tidak mengganggu alur belajar kalau request gagal.
+  const saveJawaban = (itemType, itemId, detail, isCorrect) => {
+    api.post("/materi4/jawaban", {
+      item_type: itemType,
+      item_id: itemId,
+      detail,
+      is_correct: !!isCorrect,
+    }).catch(() => { /* diabaikan: jawaban tetap tersimpan di state lokal */ });
+  };
+
+
+  // Daftar aktivitas yang wajib dituntaskan sebelum tombol "Selesaikan Materi 4"
+  // boleh diklik. Dipakai untuk validasi tombol sekaligus menampilkan pesan
+  // aktivitas mana saja yang masih kurang.
+  const finishRequirements = [
+    { done: qaSubmitted, label: "Pertanyaan Pemantik — Penyebab Abrasi" },
+    { done: dndChecked, label: "Aktivitas 2 — Susun Bagaimana Abrasi Terjadi" },
+    { done: animViewed, label: "Visualisasi Proses Abrasi" },
+    { done: allImpactVisited, label: "Aktivitas 3 — Eksplorasi Dampak Abrasi" },
+    { done: allLinked, label: "Aktivitas 4 — Hubungkan Dampak Abrasi" },
+    { done: reflSubmitted, label: "Pertanyaan Refleksi" },
+  ];
+  const allActivitiesDone = finishRequirements.every(r => r.done);
+  const missingActivities = finishRequirements.filter(r => !r.done);
+
   const handleFinish = () => {
-    if (finishing || finished) return;
+    if (finishing || finished || !allActivitiesDone) return;
     setFinishing(true);
     setFinishError(null);
     api.post("/materi/abrasi-pantai/complete")
@@ -647,7 +758,7 @@ export default function AbrasiPantai() {
       <div className="progress-wrap">
         <div className="container">
           <div className="progress-bar-row reveal">
-            <span className="progress-label">Materi 4  {pct}%</span>
+            <span className="progress-label">{loadingProgress ? "Memuat progres tersimpan…" : `Materi 4  ${pct}%`}</span>
             <div className="progress-track"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
           </div>
         </div>
@@ -721,7 +832,10 @@ export default function AbrasiPantai() {
               );
             })}
             {!qaSubmitted ? (
-              <button className="btn btn-primary" disabled={qaSelected === null} onClick={() => setQaSubmitted(true)} style={{ marginTop: 8 }}>
+              <button className="btn btn-primary" disabled={qaSelected === null} onClick={() => {
+                setQaSubmitted(true);
+                saveJawaban("mcq", "penyebab-abrasi", { selected: qaSelected }, qaSelected === qaCorrect);
+              }} style={{ marginTop: 8 }}>
                 Periksa Jawaban <ArrowIcon />
               </button>
             ) : (
@@ -735,11 +849,6 @@ export default function AbrasiPantai() {
                       : " Belum tepat. Pertumbuhan tanaman bukan penyebab utama perubahan garis pantai pada ilustrasi tersebut. Coba perhatikan kembali perubahan pada area pasir dan garis pantainya."
                   }</span>
                 </div>
-                {qaSelected !== qaCorrect && (
-                  <button className="btn btn-outline btn-sm" style={{ marginTop: 12 }} onClick={() => { setQaSubmitted(false); setQaSelected(null); }}>
-                    <RefreshIcon /> Coba Lagi
-                  </button>
-                )}
               </>
             )}
           </div>
@@ -747,7 +856,7 @@ export default function AbrasiPantai() {
       </section>
 
       {/* SECTION 4  SUSUN PROSES ABRASI (DnD) */}
-      {qaSubmitted && qaSelected === 0 && (
+      {qaSubmitted && (
         <section className="section section-alt">
           <div className="container">
             <div className="section-head reveal">
@@ -1015,7 +1124,12 @@ export default function AbrasiPantai() {
                     onClick={() => {
                       setLinked(prev => {
                         const n = new Set(prev);
-                        if (n.has(item.id)) n.delete(item.id); else n.add(item.id);
+                        if (n.has(item.id)) {
+                          n.delete(item.id);
+                        } else {
+                          n.add(item.id);
+                          saveJawaban("koneksi", item.id, { label: item.label }, true);
+                        }
                         return n;
                       });
                     }}>
@@ -1060,7 +1174,10 @@ export default function AbrasiPantai() {
               })}
               {!reflSubmitted ? (
                 <button className="btn btn-primary" disabled={reflSelected === null}
-                  onClick={() => setReflSubmitted(true)} style={{ marginTop: 8 }}>
+                  onClick={() => {
+                    setReflSubmitted(true);
+                    saveJawaban("refleksi", "kesimpulan", { selected: reflSelected }, reflSelected === REFLEKSI_Q.correct);
+                  }} style={{ marginTop: 8 }}>
                   Periksa Jawaban <ArrowIcon />
                 </button>
               ) : (
@@ -1069,12 +1186,6 @@ export default function AbrasiPantai() {
                     {reflSelected === REFLEKSI_Q.correct ? <CheckIcon /> : <XIcon />}
                     <span>{reflSelected === REFLEKSI_Q.correct ? REFLEKSI_Q.feedbackCorrect : REFLEKSI_Q.feedbackWrong}</span>
                   </div>
-                  {reflSelected !== REFLEKSI_Q.correct && (
-                    <button className="btn btn-outline btn-sm" style={{ marginTop: 12 }}
-                      onClick={() => { setReflSubmitted(false); setReflSelected(null); }}>
-                      <RefreshIcon /> Coba Lagi
-                    </button>
-                  )}
                 </>
               )}
             </div>
@@ -1105,24 +1216,34 @@ export default function AbrasiPantai() {
                 <strong style={{ color: "var(--amber)" }}>Perubahan garis pantai bukan hanya perubahan bentuk pantai.</strong><br />
                 Abrasi yang terus berlangsung dapat memengaruhi berbagai bagian wilayah pesisir dan kehidupan di sekitarnya.
               </p>
-              {!finished ? (
-                <button className="btn btn-primary" onClick={handleFinish} disabled={finishing}>
-                  {finishing ? "Menyimpan" : " Selesaikan Materi 4"} <ArrowIcon />
-                </button>
-              ) : (
-                <div className="feedback correct" style={{ justifyContent: "center", background: "rgba(255,255,255,0.12)", borderRadius: 14 }}>
-                  <CheckIcon />
-                  <span style={{ color: "var(--paper)" }}> Materi 4 sudah selesai! Lanjutkan ke Materi 5.</span>
+              <button
+                className={`btn btn-primary${finished ? " btn-finished" : ""}`}
+                onClick={handleFinish}
+                disabled={finishing || finished || !allActivitiesDone}
+                title={!allActivitiesDone && !finished ? "Selesaikan semua aktivitas Materi 4 terlebih dahulu" : undefined}
+              >
+                {finished
+                  ? <>✅ Materi Telah Diselesaikan</>
+                  : finishing
+                    ? "Menyimpan..."
+                    : <>🎉 Selesaikan Materi 4 <ArrowIcon /></>}
+              </button>
+              {finishError && <p style={{ color: "#ffbbbb", marginTop: 12, fontSize: "0.85rem" }}>{finishError}</p>}
+              {!finished && !allActivitiesDone && (
+                <div style={{ marginTop: 16, textAlign: "left", background: "rgba(251,250,245,0.1)", borderRadius: 12, padding: "14px 18px" }}>
+                  <p style={{ color: "var(--amber)", fontSize: "0.85rem", fontWeight: 700, margin: "0 0 8px" }}>
+                    ⚠️ Lengkapi aktivitas berikut sebelum menyelesaikan Materi 4:
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: 20, color: "rgba(251,250,245,0.88)", fontSize: "0.82rem", lineHeight: 1.8 }}>
+                    {missingActivities.map((r, i) => <li key={i}>{r.label}</li>)}
+                  </ul>
                 </div>
               )}
-              {finishError && <p style={{ color: "#ffbbbb", marginTop: 12, fontSize: "0.85rem" }}>{finishError}</p>}
             </div>
 
             {/* NAVIGATION */}
             <div className="materi-nav reveal">
-              <button className="btn btn-outline" onClick={() => navigate("/materi/perubahan-lingkungan")}>
-                <ArrowLeftIcon /> Materi 3  Perubahan Lingkungan
-              </button>
+              <Link to="/materi" className="btn btn-outline"><ArrowLeftIcon /> Daftar Materi</Link>
               <button
                 className="btn btn-primary"
                 onClick={() => { if (!finished) { setShowLock(true); } else { navigate("/materi/konservasi-mangrove"); } }}>

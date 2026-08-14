@@ -617,6 +617,28 @@ export default function PerubahanLingkungan() {
     };
   }, []);
 
+  /* ── rehydrate status "Materi 3 selesai" dari database ──
+     Sama seperti Materi 1 (EkosistemMangrove.jsx): dicek terpisah lewat
+     GET /materi/progress → { completed: [slug, ...] }. Tanpa ini,
+     materiFinished selalu mulai dari false lagi tiap kali halaman
+     di-refresh, meskipun statusnya sudah tersimpan di server. */
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/materi/progress")
+      .then((res) => {
+        if (cancelled) return;
+        const completed = res.data?.completed || [];
+        if (completed.includes("perubahan-lingkungan")) {
+          setMateriFinished(true);
+        }
+      })
+      .catch((err) => console.error("Gagal memuat status penyelesaian Materi 3:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const fenomenaAllDone = FENOMENA_ORDER.every((k) => fState[k].done);
   const reflCorrect = reflSubmitted && reflSelected === 0;
   const maxUnlockedIdx = 3 + (fenomenaAllDone ? 1 : 0) + (dragChecked ? 1 : 0) + (reflSubmitted ? 1 : 0);
