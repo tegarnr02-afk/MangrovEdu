@@ -14,6 +14,7 @@ const XIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 const RefreshIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4v5h5" /><path d="M20 20v-5h-5" /><path d="M5.5 9a7 7 0 0 1 12.3-2.5M18.5 15a7 7 0 0 1-12.3 2.5" /></svg>);
 const ChevronRightIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>);
 const CloseIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>);
+const ZoomInIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35M11 8v6M8 11h6" /></svg>);
 
 /* ===== DATA: EMPAT PERBEDAAN KONDISI MANGROVE ===== */
 const DIFFS = [
@@ -25,12 +26,15 @@ const DIFFS = [
 
 /* Titik interaktif pada kedua gambar. `real` = perbedaan yang benar,
    sisanya adalah "pengalih" (bukan perbedaan) untuk melatih ketelitian. */
+/* Titik interaktif pada kedua gambar. `real` = perbedaan yang benar (bisa ditemukan
+   dengan mengklik gambar A ATAU B, tandanya akan muncul di kedua gambar sekaligus).
+   Entri dengan `img` = pengalih (bukan perbedaan) yang hanya ada di gambar tersebut. */
 const SPOTS = [
-  { id: "kerapatan", img: "a", x: 30, y: 42, real: true },
-  { id: "organisme", img: "a", x: 72, y: 30, real: true },
+  { id: "kerapatan", x: 30, y: 42, real: true },
+  { id: "organisme", x: 72, y: 30, real: true },
+  { id: "perairan", x: 55, y: 78, real: true },
+  { id: "vegetasi", x: 78, y: 40, real: true },
   { id: "d1", img: "a", x: 42, y: 12, real: false },
-  { id: "perairan", img: "b", x: 55, y: 78, real: true },
-  { id: "vegetasi", img: "b", x: 78, y: 40, real: true },
   { id: "d2", img: "b", x: 14, y: 58, real: false },
 ];
 
@@ -73,15 +77,9 @@ const FUNGSI = [
     anim: ["🌱 Akar mangrove", "🦀 Tempat berlindung + 🍽️ Sumber makanan", "🦀 Kepiting bakau"],
   },
   {
-    id: "perlindungan", emoji: "🌊", label: "Perlindungan Pesisir", color: "#2F6B57", bg: "#D6EAE1",
-    desc: "Akar dan batang mangrove yang rapat berfungsi seperti benteng alami di tepi pantai. Ketika gelombang laut datang, kerapatan hutan mangrove membantu memecah dan meredam energi gelombang sebelum mencapai daratan.",
-    detail: "Semakin lebar dan lebat hutan mangrove, semakin besar pula kemampuannya melindungi wilayah pesisir dari abrasi dan gelombang besar.",
-    anim: ["🌊 Gelombang", "🌱🌱🌱 Mangrove", "🛡️ Energi gelombang berkurang", "🏝️ Daratan terlindungi"],
-  },
-  {
-    id: "penyimpanan", emoji: "🌍", label: "Penyimpanan Karbon", color: "#C24A5F", bg: "#F8E4E7",
-    desc: "Informasi mengenai penyimpanan karbon pada materi ini belum dijelaskan secara rinci.",
-    detail: null,
+    id: "perlindungan", emoji: "🌊", label: "Perlindungan", color: "#2F6B57", bg: "#D6EAE1",
+    desc: "Keong Potamididae adalah salah satu organisme yang erat kaitannya dengan ekosistem mangrove.",
+    detail: "Penelitian di kawasan mangrove Probolinggo, Jawa Timur, menemukan bahwa keong Potamididae hanya bisa hidup jika ada vegetasi mangrove di sekitarnya.",
     anim: null,
     /* Keong Potamididae — organisme pesisir yang erat kaitannya dengan mangrove */
     keong: {
@@ -89,6 +87,12 @@ const FUNGSI = [
       desc: "Penelitian di kawasan mangrove Probolinggo, Jawa Timur, menemukan bahwa keong Potamididae hanya bisa hidup jika ada vegetasi mangrove di sekitarnya.",
       konklusi: "Hal ini menunjukkan eratnya hubungan antara mangrove dan kelangsungan hidup hewan-hewan kecil di pesisir.",
     },
+  },
+  {
+    id: "penyimpanan", emoji: "🌍", label: "Penyimpanan", color: "#C24A5F", bg: "#F8E4E7",
+    desc: "Akar dan batang mangrove yang rapat berfungsi seperti benteng alami di tepi pantai. Saat gelombang laut datang, kerapatan hutan mangrove membantu memecah dan meredam energi gelombang sebelum mencapai daratan. Semakin lebar dan lebat hutan mangrove, semakin besar pula kemampuannya melindungi wilayah pesisir dari abrasi dan gelombang besar.",
+    detail: null,
+    anim: ["🌊 Gelombang", "🌱🌱🌱 Mangrove", "🛡️ Energi gelombang berkurang", "🏝️ Daratan terlindungi"],
   },
 ];
 
@@ -154,8 +158,8 @@ const PREDIKSI_ANIM = ["🌱 Mangrove berkurang", "🛡️ Perlindungan pesisir 
 /* ===== DATA: HUBUNGAN FUNGSI MANGROVE ===== */
 const HUB = [
   { id: "habitat", icon: "🐟", label: "Habitat Organisme", color: "#3D8267", bg: "#E1EAE2" },
-  { id: "perlindungan", icon: "🌊", label: "Perlindungan Pesisir", color: "#2F6B57", bg: "#D6EAE1" },
-  { id: "penyimpanan", icon: "🌍", label: "Penyimpanan Karbon", color: "#C24A5F", bg: "#F8E4E7" },
+  { id: "perlindungan", icon: "🌊", label: "Perlindungan", color: "#2F6B57", bg: "#D6EAE1" },
+  { id: "penyimpanan", icon: "🌍", label: "Penyimpanan", color: "#C24A5F", bg: "#F8E4E7" },
   { id: "manfaat", icon: "👥", label: "Manfaat bagi Masyarakat", color: "#E8A33D", bg: "#FDF0D5" },
 ];
 
@@ -204,6 +208,102 @@ function AnimChain({ steps, style }) {
 }
 
 /* ===== MAIN COMPONENT ===== */
+/* ===== IMAGE LIGHTBOX (ZOOM VIEWER) ===== */
+function ImageLightbox({ img, alt, onClose }) {
+  const [scale, setScale] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const dragging = useRef(false);
+  const last = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const clampScale = (s) => Math.min(4, Math.max(1, s));
+
+  const zoomStep = (delta) => {
+    setScale((s) => {
+      const next = clampScale(s + delta);
+      if (next === 1) setPos({ x: 0, y: 0 });
+      return next;
+    });
+  };
+
+  const overlayRef = useRef(null);
+
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    const onWheelNative = (e) => {
+      e.preventDefault();
+      zoomStep(-e.deltaY * 0.0018);
+    };
+    el.addEventListener("wheel", onWheelNative, { passive: false });
+    return () => el.removeEventListener("wheel", onWheelNative);
+  }, []);
+
+  const toggleZoom = (e) => {
+    e.stopPropagation();
+    if (scale > 1) {
+      setScale(1);
+      setPos({ x: 0, y: 0 });
+    } else {
+      setScale(2.2);
+    }
+  };
+
+  const onMouseDown = (e) => {
+    if (scale === 1) return;
+    dragging.current = true;
+    last.current = { x: e.clientX, y: e.clientY };
+  };
+  const onMouseMove = (e) => {
+    if (!dragging.current) return;
+    const dx = e.clientX - last.current.x;
+    const dy = e.clientY - last.current.y;
+    last.current = { x: e.clientX, y: e.clientY };
+    setPos((p) => ({ x: p.x + dx, y: p.y + dy }));
+  };
+  const stopDrag = () => { dragging.current = false; };
+
+  return (
+    <div
+      ref={overlayRef}
+      className="lightbox-overlay"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <button className="lightbox-close" onClick={onClose} aria-label="Tutup">
+        <XIcon />
+      </button>
+      {alt && <div className="lightbox-caption">{alt}</div>}
+      <img
+        src={img}
+        alt={alt}
+        className="lightbox-img"
+        style={{
+          transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+          cursor: scale === 1 ? "zoom-in" : dragging.current ? "grabbing" : "grab",
+        }}
+        onClick={toggleZoom}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={stopDrag}
+        onMouseLeave={stopDrag}
+        draggable={false}
+      />
+      <div className="lightbox-zoom-controls" onClick={(e) => e.stopPropagation()}>
+        <button className="lightbox-zoom-btn" onClick={() => zoomStep(-0.6)} aria-label="Perkecil">−</button>
+        <button className="lightbox-zoom-btn" onClick={() => zoomStep(0.6)} aria-label="Perbesar">+</button>
+      </div>
+      <div className="lightbox-hint">
+        {scale === 1 ? "Klik gambar atau scroll untuk memperbesar" : "Geser untuk menjelajah • Klik untuk reset"}
+      </div>
+    </div>
+  );
+}
+
 export default function KonservasiMangrove() {
   const navigate = useNavigate();
 
@@ -212,6 +312,8 @@ export default function KonservasiMangrove() {
   const [diffChecked, setDiffChecked] = useState(false);
   const [diffResult, setDiffResult] = useState(null); // 'complete' | 'incomplete' | 'none'
   const [spotMsg, setSpotMsg] = useState(null);
+  const [markers, setMarkers] = useState([]); // { key, id, x, y, img, type: 'correct'|'wrong' }
+  const [lightbox, setLightbox] = useState(null); // { src, alt } | null
 
   // Aktivitas 2 — tindakan (MCQ + coba lagi)
   const [tindakanSelected, setTindakanSelected] = useState(null);
@@ -350,22 +452,63 @@ export default function KonservasiMangrove() {
     return () => io.disconnect();
   });
 
-  /* ── handler: klik area perbedaan ── */
-  const handleSpotClick = (spot) => {
+  /* ── handler: klik bebas pada gambar (user menebak sendiri lokasi perbedaan, tanpa batas nyawa) ── */
+  const HIT_RADIUS_PX = 75; // toleransi jarak klik ke titik perbedaan asli
+
+  const handleImageClick = (e, imgKey) => {
     if (diffResult === "complete") return;
-    if (!spot.real) {
-      setSpotMsg(spot.id);
-      window.clearTimeout(window.__spotTimer);
-      window.__spotTimer = setTimeout(() => setSpotMsg(null), 2600);
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+    const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+    if (xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) return;
+
+    // cari titik perbedaan (SPOTS) terdekat dari lokasi klik:
+    // titik "real" bisa dikenali dari gambar A maupun B, titik pengalih hanya berlaku di gambarnya sendiri
+    let closest = null;
+    let closestDist = Infinity;
+    SPOTS.filter((s) => s.real || s.img === imgKey).forEach((s) => {
+      const dx = ((xPct - s.x) / 100) * rect.width;
+      const dy = ((yPct - s.y) / 100) * rect.height;
+      const dist = Math.hypot(dx, dy);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = s;
+      }
+    });
+    const hit = closest && closestDist <= HIT_RADIUS_PX ? closest : null;
+
+    // tebakan benar: klik cukup dekat dengan perbedaan asli yang belum ditemukan
+    // -> tandanya dimunculkan sekaligus di gambar A dan gambar B
+    if (hit && hit.real && !foundDiffs.has(hit.id)) {
+      setFoundDiffs((prev) => {
+        saveJawaban("koneksi", `temu-${hit.id}`, { label: DIFFS.find((d) => d.id === hit.id)?.label }, true);
+        return new Set(prev).add(hit.id);
+      });
+      setDiffResult(null);
+      setDiffChecked(false);
+      setMarkers((prev) => [
+        ...prev.filter((m) => m.id !== hit.id),
+        { key: `correct-${hit.id}-a`, id: hit.id, type: "correct", x: hit.x, y: hit.y, img: "a" },
+        { key: `correct-${hit.id}-b`, id: hit.id, type: "correct", x: hit.x, y: hit.y, img: "b" },
+      ]);
       return;
     }
-    setFoundDiffs((prev) => {
-      if (prev.has(spot.id)) return prev;
-      saveJawaban("koneksi", `temu-${spot.id}`, { label: DIFFS.find((d) => d.id === spot.id)?.label }, true);
-      return new Set(prev).add(spot.id);
-    });
-    setDiffResult(null);
-    setDiffChecked(false);
+
+    // klik di area yang sudah ditemukan sebelumnya: abaikan
+    if (hit && hit.real && foundDiffs.has(hit.id)) return;
+
+    // tebakan salah: kena area pengalih atau area kosong -> tampilkan tanda X di titik klik (tidak ada pengurangan nyawa)
+    const markX = hit ? hit.x : xPct;
+    const markY = hit ? hit.y : yPct;
+    const markerKey = `wrong-${Date.now()}-${Math.random()}`;
+    setMarkers((prev) => [...prev, { key: markerKey, type: "wrong", x: markX, y: markY, img: imgKey }]);
+    setSpotMsg(markerKey);
+    window.clearTimeout(window.__spotTimer);
+    window.__spotTimer = setTimeout(() => {
+      setMarkers((prev) => prev.filter((m) => m.key !== markerKey));
+      setSpotMsg((cur) => (cur === markerKey ? null : cur));
+    }, 2200);
   };
 
   const handlePeriksa = () => {
@@ -375,21 +518,14 @@ export default function KonservasiMangrove() {
     else setDiffResult("none");
   };
 
-  /* ── handler: tindakan ── */
+  /* ── handler: tindakan (user tetap bisa lanjut walau jawaban salah) ── */
   const handleTindakanSubmit = () => {
     if (tindakanSelected === null) return;
-    if (TINDAKAN.options[tindakanSelected].correct) {
-      setTindakanSubmitted(true);
-      setTindakanWrongIdx(null);
-      saveJawaban("mcq", "tindakan", { selected: tindakanSelected }, true);
-      scrollTo(fungsiRef);
-    } else {
-      setTindakanWrongIdx(tindakanSelected);
-    }
-  };
-  const handleCobaLagi = () => {
-    setTindakanSelected(null);
-    setTindakanWrongIdx(null);
+    const isCorrect = !!TINDAKAN.options[tindakanSelected].correct;
+    setTindakanSubmitted(true);
+    setTindakanWrongIdx(isCorrect ? null : tindakanSelected);
+    saveJawaban("mcq", "tindakan", { selected: tindakanSelected }, isCorrect);
+    scrollTo(fungsiRef);
   };
 
   /* ── handler: fungsi ── */
@@ -488,30 +624,28 @@ export default function KonservasiMangrove() {
           <div className="section-head reveal">
             <span className="eyebrow">Aktivitas 1</span>
             <h2>Ayo Temukan Perbedaannya!</h2>
-            <p>Amati kedua gambar. Klik area yang menunjukkan perbedaan kondisi ekosistem mangrove.</p>
+            <p>Amati kedua gambar, lalu klik langsung pada bagian yang menurutmu berbeda. Tidak ada tanda bantuan — tebakan tepat akan muncul lingkaran ✓, tebakan keliru akan muncul tanda ✗.</p>
           </div>
 
           <div className="spot-grid reveal">
             {/* Gambar A */}
             <div className="spot-card">
               <span className="spot-badge">Gambar A · Kondisi Kiri</span>
-              <div className="spot-img-wrap">
-                <img src={imgMangroveSehat} alt="Kondisi mangrove yang sehat dan rapat" />
-                {SPOTS.filter((s) => s.img === "a").map((spot) => {
-                  const isFound = spot.real && foundDiffs.has(spot.id);
-                  const isWrong = spotMsg === spot.id;
-                  return (
-                    <button
-                      key={spot.id}
-                      className={`spot-dot${isFound ? " found" : ""}${isWrong ? " wrong" : ""}`}
-                      style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
-                      onClick={() => handleSpotClick(spot)}
-                      aria-label={spot.real ? "Tandai perbedaan" : "Periksa area ini"}
-                    >
-                      {isFound ? <CheckIcon /> : "🔍"}
-                    </button>
-                  );
-                })}
+              <div className="spot-img-wrap guessable" onClick={(e) => handleImageClick(e, "a")}>
+                <img src={imgMangroveSehat} alt="Kondisi mangrove yang sehat dan rapat" draggable={false} />
+                <button
+                  className="spot-zoom-btn"
+                  onClick={(e) => { e.stopPropagation(); setLightbox({ src: imgMangroveSehat, alt: "Kondisi mangrove yang sehat dan rapat" }); }}
+                  aria-label="Perbesar gambar kondisi kiri"
+                  title="Perbesar gambar"
+                >
+                  <ZoomInIcon />
+                </button>
+                {markers.filter((m) => m.img === "a").map((m) => (
+                  <span key={m.key} className={`spot-marker ${m.type}`} style={{ left: `${m.x}%`, top: `${m.y}%` }}>
+                    {m.type === "correct" ? <CheckIcon /> : <XIcon />}
+                  </span>
+                ))}
               </div>
               <div className="spot-caption">
                 <strong>Kondisi Kiri</strong>
@@ -522,23 +656,21 @@ export default function KonservasiMangrove() {
             {/* Gambar B */}
             <div className="spot-card">
               <span className="spot-badge alt">Gambar B · Kondisi Kanan</span>
-              <div className="spot-img-wrap">
-                <img src={imgMangroveRusak} alt="Kondisi mangrove yang rusak dan jarang" />
-                {SPOTS.filter((s) => s.img === "b").map((spot) => {
-                  const isFound = spot.real && foundDiffs.has(spot.id);
-                  const isWrong = spotMsg === spot.id;
-                  return (
-                    <button
-                      key={spot.id}
-                      className={`spot-dot${isFound ? " found" : ""}${isWrong ? " wrong" : ""}`}
-                      style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
-                      onClick={() => handleSpotClick(spot)}
-                      aria-label={spot.real ? "Tandai perbedaan" : "Periksa area ini"}
-                    >
-                      {isFound ? <CheckIcon /> : "🔍"}
-                    </button>
-                  );
-                })}
+              <div className="spot-img-wrap guessable" onClick={(e) => handleImageClick(e, "b")}>
+                <img src={imgMangroveRusak} alt="Kondisi mangrove yang rusak dan jarang" draggable={false} />
+                <button
+                  className="spot-zoom-btn"
+                  onClick={(e) => { e.stopPropagation(); setLightbox({ src: imgMangroveRusak, alt: "Kondisi mangrove yang rusak dan jarang" }); }}
+                  aria-label="Perbesar gambar kondisi kanan"
+                  title="Perbesar gambar"
+                >
+                  <ZoomInIcon />
+                </button>
+                {markers.filter((m) => m.img === "b").map((m) => (
+                  <span key={m.key} className={`spot-marker ${m.type}`} style={{ left: `${m.x}%`, top: `${m.y}%` }}>
+                    {m.type === "correct" ? <CheckIcon /> : <XIcon />}
+                  </span>
+                ))}
               </div>
               <div className="spot-caption">
                 <strong>Kondisi Kanan</strong>
@@ -638,23 +770,27 @@ export default function KonservasiMangrove() {
                 const isCorrect = !!opt.correct;
                 const state = tindakanSubmitted
                   ? isCorrect ? "correct" : tindakanSelected === i ? "wrong" : ""
-                  : tindakanWrongIdx === i ? "wrong" : tindakanSelected === i ? "selected" : "";
+                  : tindakanSelected === i ? "selected" : "";
                 return (
                   <button
                     key={i}
                     className={`quiz-option ${state}`}
-                    onClick={() => { if (!tindakanSubmitted) { setTindakanSelected(i); setTindakanWrongIdx(null); } }}
+                    onClick={() => { if (!tindakanSubmitted) setTindakanSelected(i); }}
                     disabled={tindakanSubmitted}
                   >
                     <span className="quiz-option-dot">
                       {tindakanSubmitted && isCorrect && <CheckIcon />}
-                      {!tindakanSubmitted && tindakanWrongIdx === i && <XIcon />}
+                      {tindakanSubmitted && !isCorrect && tindakanSelected === i && <XIcon />}
                     </span>
                     {opt.label}
                   </button>
                 );
               })}
-              {tindakanSubmitted ? (
+              {!tindakanSubmitted ? (
+                <button className="btn btn-primary" disabled={tindakanSelected === null} onClick={handleTindakanSubmit} style={{ marginTop: 8 }}>
+                  Periksa Jawaban <ArrowIcon />
+                </button>
+              ) : tindakanWrongIdx === null ? (
                 <div className="feedback correct">
                   <CheckIcon />
                   <div>
@@ -662,18 +798,16 @@ export default function KonservasiMangrove() {
                     <AnimChain steps={TINDAKAN_ANIM} style={{ maxWidth: "100%", margin: "20px 0 0" }} />
                   </div>
                 </div>
-              ) : tindakanWrongIdx !== null ? (
+              ) : (
                 <div className="feedback wrong">
                   <XIcon />
                   <div>
                     <span>{TINDAKAN.options[tindakanWrongIdx].feedback}</span>
-                    <button className="btn btn-outline btn-sm" style={{ marginTop: 12 }} onClick={handleCobaLagi}><RefreshIcon /> Coba Lagi</button>
+                    <p style={{ marginTop: 10, fontSize: "0.85rem", color: "#4C5F58" }}>
+                      Jawaban yang tepat: <strong>{TINDAKAN.options.find((o) => o.correct).label}</strong>
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <button className="btn btn-primary" disabled={tindakanSelected === null} onClick={handleTindakanSubmit} style={{ marginTop: 8 }}>
-                  Periksa Jawaban <ArrowIcon />
-                </button>
               )}
             </div>
           </div>
@@ -750,7 +884,15 @@ export default function KonservasiMangrove() {
                   style={{ "--produk-bg": p.bg, "--produk-accent": p.accent }}
                   onClick={() => handleProduk(p)}
                 >
-                  <span className="produk-emoji">{p.emoji}</span>
+                  <div className="produk-img-wrap">
+                    <img
+                      src={p.img}
+                      alt={p.nama}
+                      className="produk-thumb-img"
+                      onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }}
+                    />
+                    <span className="produk-thumb-fallback" style={{ display: "none" }}>{p.emoji}</span>
+                  </div>
                   <span className="produk-nama">{p.nama}</span>
                   <span className="produk-zoom">🔍 Perbesar</span>
                 </button>
@@ -981,6 +1123,11 @@ export default function KonservasiMangrove() {
         </div>
       )}
 
+      {/* IMAGE LIGHTBOX */}
+      {lightbox && (
+        <ImageLightbox img={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
+      )}
+
       {/* LOCK MODAL */}
       {showLock && (
         <div className="lock-overlay" onClick={() => setShowLock(false)}>
@@ -1128,12 +1275,31 @@ const STYLES = `
   .spot-badge.alt{color:var(--danger);}
   .spot-img-wrap{position:relative;line-height:0;background:var(--tide-pale);}
   .spot-img-wrap img{width:100%;height:auto;display:block;}
-  .spot-dot{position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(251,250,245,0.85);border:2px dashed var(--amber);color:var(--amber-deep);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;transform:translate(-50%,-50%);transition:background .2s ease,transform .2s ease,border-color .2s ease;animation:spotPulse 1.8s ease-in-out infinite;box-shadow:0 4px 14px -6px rgba(15,36,29,0.4);}
-  .spot-dot svg{width:18px;height:18px;}
-  .spot-dot:hover{transform:translate(-50%,-50%) scale(1.12);}
-  .spot-dot.found{background:var(--estuary);border-style:solid;border-color:var(--estuary);color:#fff;animation:none;}
-  .spot-dot.wrong{background:var(--danger);border-color:var(--danger);color:#fff;animation:none;}
-  @keyframes spotPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,163,61,0.5);}50%{box-shadow:0 0 0 9px rgba(232,163,61,0);}}
+  .spot-img-wrap.guessable{cursor:crosshair;}
+  .spot-zoom-btn{position:absolute;bottom:10px;right:10px;background:rgba(15,36,29,0.78);color:var(--paper);border:none;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transform:translateY(4px);transition:opacity .2s ease,transform .2s ease;z-index:3;}
+  .spot-zoom-btn svg{width:16px;height:16px;}
+  .spot-img-wrap:hover .spot-zoom-btn{opacity:1;transform:translateY(0);}
+  .spot-zoom-btn:hover{background:var(--estuary);}
+  @media(max-width:600px){.spot-zoom-btn{opacity:1;transform:translateY(0);}}
+
+  /* ── image lightbox (zoom) ─── */
+  .lightbox-overlay{position:fixed;inset:0;background:rgba(6,14,11,0.94);z-index:2000;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:fadeOv .2s ease;touch-action:none;}
+  .lightbox-img{max-width:88vw;max-height:80vh;object-fit:contain;transition:transform .12s ease-out;user-select:none;-webkit-user-drag:none;border-radius:6px;}
+  .lightbox-close{position:fixed;top:20px;right:20px;background:rgba(251,250,245,0.12);border:1px solid rgba(251,250,245,0.25);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;color:var(--paper);cursor:pointer;z-index:2001;}
+  .lightbox-close svg{width:18px;height:18px;}
+  .lightbox-close:hover{background:rgba(251,250,245,0.22);}
+  .lightbox-caption{position:fixed;top:24px;left:24px;color:rgba(251,250,245,0.85);font-family:'Fraunces',serif;font-style:italic;font-size:1.05rem;z-index:2001;}
+  .lightbox-zoom-controls{position:fixed;bottom:24px;right:24px;display:flex;gap:8px;z-index:2001;}
+  .lightbox-zoom-btn{background:rgba(251,250,245,0.12);border:1px solid rgba(251,250,245,0.25);border-radius:50%;width:38px;height:38px;color:var(--paper);font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .lightbox-zoom-btn:hover{background:rgba(251,250,245,0.22);}
+  .lightbox-hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:rgba(251,250,245,0.12);color:rgba(251,250,245,0.85);padding:8px 18px;border-radius:999px;font-size:0.78rem;z-index:2001;pointer-events:none;white-space:nowrap;}
+  @keyframes fadeOv{from{opacity:0;}to{opacity:1;}}
+  @media(max-width:600px){.lightbox-caption{top:16px;left:16px;font-size:0.9rem;}.lightbox-hint{display:none;}}
+  .spot-marker{position:absolute;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 4px 14px -6px rgba(15,36,29,0.4);animation:markerPop .25s ease-out;z-index:2;}
+  .spot-marker svg{width:18px;height:18px;}
+  .spot-marker.correct{background:var(--estuary);color:#fff;}
+  .spot-marker.wrong{background:var(--danger);color:#fff;}
+  @keyframes markerPop{0%{transform:translate(-50%,-50%) scale(0.4);opacity:0;}100%{transform:translate(-50%,-50%) scale(1);opacity:1;}}
   .spot-caption{padding:14px 20px;display:flex;flex-direction:column;gap:2px;}
   .spot-caption strong{font-size:0.9rem;color:var(--canopy);}
   .spot-caption span{font-size:0.8rem;color:#556961;}
@@ -1151,11 +1317,13 @@ const STYLES = `
 
   /* ===== Manfaat (produk) ===== */
   .produk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
-  .produk-card{background:var(--paper);border-radius:18px;padding:26px 18px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;border:2px solid rgba(15,36,29,0.06);box-shadow:0 4px 16px -10px rgba(15,36,29,0.12);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;font-family:'Plus Jakarta Sans',sans-serif;}
+  .produk-card{background:var(--paper);border-radius:18px;padding:16px 16px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;border:2px solid rgba(15,36,29,0.06);box-shadow:0 4px 16px -10px rgba(15,36,29,0.12);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;font-family:'Plus Jakarta Sans',sans-serif;}
   .produk-card:hover{transform:translateY(-5px);box-shadow:0 16px 30px -16px rgba(15,36,29,0.28);border-color:var(--produk-accent);}
   .produk-card.visited{border-color:var(--tide);}
-  .produk-emoji{width:72px;height:72px;border-radius:20px;background:var(--produk-bg);display:flex;align-items:center;justify-content:center;font-size:2.2rem;transition:transform .25s ease;}
-  .produk-card:hover .produk-emoji{transform:scale(1.1) rotate(-4deg);}
+  .produk-img-wrap{width:100%;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--produk-bg);display:flex;align-items:center;justify-content:center;transition:transform .25s ease;}
+  .produk-card:hover .produk-img-wrap{transform:scale(1.03);}
+  .produk-thumb-img{width:100%;height:100%;object-fit:cover;display:block;}
+  .produk-thumb-fallback{font-size:2.4rem;display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
   .produk-nama{font-size:0.9rem;font-weight:700;color:var(--canopy);text-align:center;line-height:1.35;}
   .produk-zoom{font-size:0.72rem;font-weight:600;color:var(--silt);}
   .produk-modal-emoji{width:100%;aspect-ratio:4/3;border-radius:16px;background:var(--produk-bg);display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:4px;}
