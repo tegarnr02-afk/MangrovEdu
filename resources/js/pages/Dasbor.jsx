@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import api from "../lib/api";
+import heroBg from "./konservasi-mangrove-sehat.png";
 
 /* ================= ICONS ================= */
 const ArrowIcon = () => (
@@ -53,43 +55,38 @@ const LeafIcon = () => (
   </svg>
 );
 
-/* ================================================================
-   MOCK DATA — ganti dengan data dari API/auth sesungguhnya nanti.
-   Struktur sudah disiapkan supaya tinggal disambungkan.
-================================================================ */
-const studentName = "Raka";
-
-const materiProgress = [
-  { title: "Ekosistem Mangrove", href: "/materi/ekosistem-mangrove", status: "selesai", pct: 100 },
-  { title: "Interaksi dalam Ekosistem", href: "/materi/interaksi-ekosistem", status: "selesai", pct: 100 },
-  { title: "Perubahan Lingkungan", href: "/materi/perubahan-lingkungan", status: "berjalan", pct: 60 },
-  { title: "Abrasi Pantai", href: "/materi/abrasi-pantai", status: "belum", pct: 0 },
-  { title: "Konservasi Mangrove", href: "/materi/konservasi-mangrove", status: "belum", pct: 0 },
-];
-
-const quizHistory = [
-  { date: "28 Jul 2026", score: 4, total: 5, category: "Sangat Baik" },
-  { date: "22 Jul 2026", score: 3, total: 5, category: "Cukup Baik" },
-  { date: "15 Jul 2026", score: 2, total: 5, category: "Cukup Baik" },
-];
-
-const badges = [
-  { title: "Penjelajah Mangrove", desc: "Selesaikan Materi 1", unlocked: true, icon: <LeafIcon /> },
-  { title: "Ahli Ekosistem", desc: "Selesaikan Materi 2", unlocked: true, icon: <BookIcon /> },
-  { title: "Ilmuwan Lab", desc: "Jalankan 5 simulasi", unlocked: true, icon: <FlaskIcon /> },
-  { title: "Kausal Master", desc: "Skor kuis ≥ 80%", unlocked: false, icon: <QuizIcon /> },
-];
-
-const materiSelesai = materiProgress.filter((m) => m.status === "selesai").length;
-const eksperimenLab = 7;
-const skorTerakhir = quizHistory[0];
-const lencanaDiperoleh = badges.filter((b) => b.unlocked).length;
-const overallPct = Math.round(
-  (materiProgress.reduce((a, m) => a + m.pct, 0) / (materiProgress.length * 100)) * 100
-);
+const statusLabel = {
+  selesai: "Selesai",
+  berjalan: "Sedang dipelajari",
+  belum: "Belum dimulai",
+};
 
 export default function Dasbor() {
+  const [status, setStatus] = useState({ loading: true, error: false, data: null });
+  const [attempt, setAttempt] = useState(0);
+
+  // Ambil data dasbor dari endpoint agregasi (GET /api/dashboard).
   useEffect(() => {
+    let cancelled = false;
+    setStatus({ loading: true, error: false, data: null });
+
+    api
+      .get("/dashboard")
+      .then((res) => {
+        if (!cancelled) setStatus({ loading: false, error: false, data: res.data?.data ?? null });
+      })
+      .catch(() => {
+        if (!cancelled) setStatus({ loading: false, error: true, data: null });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [attempt]);
+
+  // Jalankan animasi .reveal setiap kali konten selesai dirender ulang.
+  useEffect(() => {
+    if (status.loading) return;
     const revealEls = document.querySelectorAll(".reveal");
     const io = new IntersectionObserver(
       (entries) => {
@@ -104,7 +101,27 @@ export default function Dasbor() {
     );
     revealEls.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, []);
+  }, [status.loading]);
+
+  const d = status.data;
+  const materi = d?.materi;
+  const items = materi?.items ?? [];
+  const selesai = materi?.selesai ?? 0;
+  const total = materi?.total ?? 0;
+  const eksperimen = d?.eksperimen;
+  const kuis = d?.kuis;
+
+  // Lencana diturunkan dari data nyata: dua lencana dari status materi,
+  // dua lencana lainnya menunggu data lab/kuis yang belum tersedia di DB.
+  const badges = [
+    { title: "Penjelajah Mangrove", desc: "Selesaikan Materi 1", unlocked: items[0]?.status === "selesai", icon: <LeafIcon /> },
+    { title: "Ahli Ekosistem", desc: "Selesaikan Materi 2", unlocked: items[1]?.status === "selesai", icon: <BookIcon /> },
+    { title: "Ilmuwan Lab", desc: "Jalankan 5 eksperimen", unlocked: !!eksperimen?.tersedia && (eksperimen?.total ?? 0) >= 5, icon: <FlaskIcon /> },
+    { title: "Kausal Master", desc: "Skor kuis ≥ 80%", unlocked: !!kuis?.tersedia && (kuis?.nilai_terbaik ?? 0) >= 80, icon: <QuizIcon /> },
+  ];
+  const lencanaDiperoleh = badges.filter((b) => b.unlocked).length;
+
+  const retry = () => setAttempt((a) => a + 1);
 
   return (
     <>
@@ -139,33 +156,27 @@ export default function Dasbor() {
         .btn-outline:hover{ background:rgba(251,250,245,0.1); }
 
         /* ===== Banner / greeting ===== */
-        .page-banner{ background:var(--canopy); padding:120px 0 90px; position:relative; overflow:hidden; }
-        .page-banner::before{
-          content:""; position:absolute; width:520px; height:520px; border-radius:50%;
-          background:radial-gradient(circle, rgba(232,163,61,0.16), transparent 65%);
-          top:-220px; right:-140px; pointer-events:none;
+        .wave-divider{ position:absolute; left:0; right:0; bottom:-1px; line-height:0; pointer-events:none; z-index:1; }
+        .wave-divider svg{ display:block; width:100%; height:80px; }
+        .page-banner{
+          position:relative;
+          min-height:62vh;
+          display:flex; align-items:flex-end;
+          background-image:linear-gradient(90deg, rgba(10,22,17,0.86) 0%, rgba(10,22,17,0.62) 40%, rgba(10,22,17,0.3) 75%), url(${heroBg});
+          background-size:cover; background-position:center 32%;
+          padding:90px 0 120px;
         }
-        .breadcrumb{ display:flex; align-items:center; gap:8px; font-size:0.85rem; color:rgba(251,250,245,0.65); margin-bottom:18px; position:relative; z-index:1; }
-        .breadcrumb a:hover{ color:var(--amber); }
-        .breadcrumb span.current{ color:rgba(251,250,245,0.9); }
-        .banner-flex{ display:flex; align-items:flex-end; justify-content:space-between; gap:40px; flex-wrap:wrap; position:relative; z-index:1; }
-        .page-banner h1{ color:var(--paper); font-size:clamp(1.9rem,3.4vw,2.6rem); margin-bottom:10px; }
-        .page-banner p{ color:rgba(251,250,245,0.75); max-width:480px; }
-        .banner-ring-wrap{ display:flex; align-items:center; gap:16px; }
-        .banner-ring{
-          width:96px; height:96px; border-radius:50%;
-          background:conic-gradient(var(--amber) ${overallPct * 3.6}deg, rgba(251,250,245,0.14) 0deg);
-          display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        .page-banner .container{
+          margin-left:0;
+          max-width:100%;
+          padding-left:60px;
         }
-        .banner-ring-inner{
-          width:76px; height:76px; border-radius:50%; background:var(--canopy);
-          border:1px solid rgba(251,250,245,0.15);
-          display:flex; flex-direction:column; align-items:center; justify-content:center;
+        .page-banner h1{
+          color:var(--paper); font-size:clamp(2.1rem,4vw,3.1rem); max-width:640px; margin-bottom:18px;
         }
-        .banner-ring-inner strong{ font-family:'Fraunces', serif; color:var(--paper); font-size:1.15rem; }
-        .banner-ring-inner span{ font-size:0.62rem; color:rgba(251,250,245,0.55); }
-        .banner-ring-label strong{ display:block; color:var(--paper); font-size:0.92rem; }
-        .banner-ring-label span{ color:rgba(251,250,245,0.6); font-size:0.8rem; }
+        .page-banner p{
+          color:rgba(251,250,245,0.82); max-width:560px; font-size:1.02rem;
+        }
 
         .section{ padding:64px 0; }
         .section-head{ max-width:640px; margin-bottom:32px; }
@@ -185,6 +196,8 @@ export default function Dasbor() {
         .stat-icon svg{ width:20px; height:20px; }
         .stat-card strong{ display:block; font-family:'Fraunces', serif; font-size:1.5rem; color:var(--canopy); }
         .stat-card span{ font-size:0.82rem; color:#556961; }
+        .stat-card strong.stat-muted{ color:#B9C2BD; }
+        .stat-note{ display:block; font-size:0.72rem; color:#AEB8B2; font-style:normal; margin-top:4px; }
 
         /* ===== Progress materi ===== */
         .progress-list{ display:flex; flex-direction:column; gap:14px; }
@@ -207,6 +220,38 @@ export default function Dasbor() {
         .progress-main-top span.tag{ font-weight:600; font-size:0.76rem; color:#8A9A93; }
         .progress-track{ height:7px; border-radius:999px; background:var(--sand-deep); overflow:hidden; }
         .progress-fill{ height:100%; border-radius:999px; background:var(--estuary); transition:width .5s ease; }
+        .progress-sub{ font-size:0.74rem; color:#8A9A93; margin-top:8px; }
+
+        /* ===== Empty state ===== */
+        .empty-state{
+          background:var(--paper); border:1.5px dashed rgba(15,36,29,0.16); border-radius:18px;
+          padding:48px 24px; text-align:center;
+        }
+        .empty-icon{
+          width:52px; height:52px; border-radius:50%; background:var(--tide-pale); color:var(--estuary);
+          display:flex; align-items:center; justify-content:center; margin:0 auto 16px;
+        }
+        .empty-icon svg{ width:24px; height:24px; }
+        .empty-state h3{ font-size:1.15rem; margin-bottom:8px; }
+        .empty-state p{ font-size:0.88rem; color:#556961; max-width:420px; margin:0 auto; }
+
+        /* ===== Error state ===== */
+        .error-panel{
+          background:var(--paper); border:1.5px solid rgba(194,74,95,0.25); border-radius:20px;
+          padding:56px 24px; text-align:center; max-width:560px; margin:0 auto;
+        }
+        .error-panel .empty-icon{ background:#F8E4E7; color:var(--danger); }
+        .error-panel h3{ font-size:1.3rem; margin-bottom:8px; }
+        .error-panel p{ font-size:0.9rem; color:#556961; margin-bottom:20px; }
+
+        /* ===== Loading skeleton ===== */
+        .skeleton{
+          background:linear-gradient(90deg,var(--sand-deep) 25%, #eef3ea 50%, var(--sand-deep) 75%);
+          background-size:200% 100%; animation:shimmer 1.3s infinite; border-radius:8px;
+        }
+        @keyframes shimmer{ 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+        .skeleton-line{ height:14px; margin-bottom:12px; }
+        .skeleton-card{ height:150px; border-radius:20px; }
 
         /* ===== Quiz history ===== */
         .quiz-history{ display:flex; flex-direction:column; gap:12px; }
@@ -243,7 +288,7 @@ export default function Dasbor() {
         @media (max-width:980px){
           .stat-row{ grid-template-columns:repeat(2,1fr); margin-top:24px; }
           .badge-grid{ grid-template-columns:repeat(2,1fr); }
-          .banner-flex{ align-items:flex-start; }
+          .page-banner{ min-height:50vh; }
         }
         @media (max-width:600px){
           .container{ padding:0 20px; }
@@ -258,148 +303,177 @@ export default function Dasbor() {
       {/* ================= BANNER / GREETING ================= */}
       <section className="page-banner">
         <div className="container">
-          <div className="breadcrumb reveal">
-            <Link to="/">Beranda</Link><span>/</span>
-            <span className="current">Dasbor</span>
-          </div>
-          <div className="banner-flex">
-            <div className="reveal">
-              <span className="eyebrow" style={{ color: "var(--amber)" }}>Progres Belajar</span>
-              <h1>Halo, {studentName}! 👋</h1>
-              <p>Terus lanjutkan — kamu sudah menyelesaikan {materiSelesai} dari {materiProgress.length} materi ekosistem mangrove.</p>
-            </div>
-            <div className="banner-ring-wrap reveal">
-              <div className="banner-ring">
-                <div className="banner-ring-inner">
-                  <strong>{overallPct}%</strong>
-                  <span>PROGRES</span>
-                </div>
-              </div>
-              <div className="banner-ring-label">
-                <strong>Progres Keseluruhan</strong>
-                <span>Materi &amp; aktivitas</span>
-              </div>
-            </div>
-          </div>
+          <span className="eyebrow reveal" style={{ color: "var(--amber)" }}>Progres Belajar</span>
+          <h1 className="reveal">Dasbor Pembelajaran</h1>
+          <p className="reveal">
+            Pantau perkembangan belajar, aktivitas eksperimen, dan hasil pembelajaranmu di MangrovEdu.
+          </p>
         </div>
+        <WaveDividerLocal fill="var(--sand)" />
       </section>
 
-      {/* ================= STAT CARDS ================= */}
-      <div className="container">
-        <div className="stat-row">
-          <div className="stat-card reveal show">
-            <div className="stat-icon"><BookIcon /></div>
-            <strong>{materiSelesai}/{materiProgress.length}</strong>
-            <span>Materi Selesai</span>
-          </div>
-          <div className="stat-card reveal show">
-            <div className="stat-icon"><FlaskIcon /></div>
-            <strong>{eksperimenLab}x</strong>
-            <span>Eksperimen Lab Virtual</span>
-          </div>
-          <div className="stat-card reveal show">
-            <div className="stat-icon"><QuizIcon /></div>
-            <strong>{skorTerakhir.score}/{skorTerakhir.total}</strong>
-            <span>Skor Kuis Terakhir</span>
-          </div>
-          <div className="stat-card reveal show">
-            <div className="stat-icon"><MedalIcon /></div>
-            <strong>{lencanaDiperoleh}/{badges.length}</strong>
-            <span>Lencana Diperoleh</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ================= PROGRES MATERI ================= */}
-      <section className="section">
+      {/* ================= KONTEN UTAMA ================= */}
+      {status.loading ? (
         <div className="container">
-          <div className="section-head reveal">
-            <span className="eyebrow">Progres Materi</span>
-            <h2>Lanjutkan Belajarmu</h2>
-            <p>Status penyelesaian tiap modul — klik untuk melanjutkan dari sana.</p>
-          </div>
-          <div className="progress-list">
-            {materiProgress.map((m, i) => (
-              <Link to={m.href} className="progress-row reveal" style={{ transitionDelay: `${i * 60}ms` }} key={m.title}>
-                <div className={`progress-status ${m.status}`}>
-                  {m.status === "selesai" ? <CheckIcon /> : m.status === "belum" ? <LockIcon /> : <BookIcon />}
-                </div>
-                <div className="progress-main">
-                  <div className="progress-main-top">
-                    <span>{m.title}</span>
-                    <span className="tag">
-                      {m.status === "selesai" ? "Selesai" : m.status === "berjalan" ? "Sedang Berjalan" : "Belum Dimulai"}
-                    </span>
-                  </div>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${m.pct}%` }} />
-                  </div>
-                </div>
-              </Link>
+          <div className="stat-row">
+            {[0, 1, 2, 3].map((i) => (
+              <div className="skeleton skeleton-card" key={i} />
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ================= RIWAYAT KUIS ================= */}
-      <section className="section" style={{ paddingTop: 0 }}>
-        <div className="container">
-          <div className="section-head reveal">
-            <span className="eyebrow">Riwayat Kuis</span>
-            <h2>Hasil Kuis Berpikir Kausal</h2>
-            <p>Rekam jejak percobaan kuismu — coba lagi untuk memperbaiki skor.</p>
-          </div>
-          <div className="quiz-history">
-            {quizHistory.map((h, i) => {
-              const tagColor =
-                h.category === "Sangat Baik"
-                  ? { color: "#2F6B57", bg: "#E4EFE7" }
-                  : h.category === "Cukup Baik"
-                  ? { color: "#CE8324", bg: "#FBEEDA" }
-                  : { color: "#C24A5F", bg: "#F8E4E7" };
-              return (
-                <div className="quiz-history-row reveal" style={{ transitionDelay: `${i * 60}ms` }} key={i}>
-                  <div className="quiz-history-left">
-                    <div className="quiz-history-icon"><QuizIcon /></div>
-                    <div>
-                      <div className="quiz-history-score">{h.score}/{h.total} Benar</div>
-                      <div className="quiz-history-date">{h.date}</div>
-                    </div>
-                  </div>
-                  <span className="quiz-history-tag" style={{ color: tagColor.color, background: tagColor.bg }}>
-                    {h.category}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ marginTop: 24 }}>
-            <Link to="/kuis" className="btn btn-primary">Coba Kuis Lagi <ArrowIcon /></Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= LENCANA ================= */}
-      <section className="section" style={{ paddingTop: 0 }}>
-        <div className="container">
-          <div className="section-head reveal">
-            <span className="eyebrow">Pencapaian</span>
-            <h2>Lencana Kamu</h2>
-            <p>Kumpulkan lencana dengan menyelesaikan materi, eksperimen, dan kuis.</p>
-          </div>
-          <div className="badge-grid">
-            {badges.map((b, i) => (
-              <div className={`badge-card reveal ${b.unlocked ? "" : "locked"}`} style={{ transitionDelay: `${i * 70}ms` }} key={b.title}>
-                <div className="badge-icon">{b.unlocked ? b.icon : <LockIcon />}</div>
-                <h4>{b.title}</h4>
-                <p>{b.desc}</p>
-              </div>
+          <section className="section">
+            <div className="skeleton skeleton-line" style={{ width: "220px", height: "22px" }} />
+            <div className="skeleton skeleton-line" style={{ width: "100%", height: "18px" }} />
+            <div className="skeleton skeleton-line" style={{ width: "70%", height: "18px" }} />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div className="skeleton skeleton-line" style={{ height: "64px", marginTop: "14px" }} key={i} />
             ))}
-          </div>
+          </section>
         </div>
-      </section>
+      ) : status.error ? (
+        <section className="section">
+          <div className="container">
+            <div className="error-panel">
+              <div className="empty-icon"><LockIcon /></div>
+              <h3>Gagal memuat dasbor</h3>
+              <p>Terjadi kendala saat mengambil data dari server. Pastikan kamu sudah masuk dan koneksi tersedia, lalu coba lagi.</p>
+              <button className="btn btn-primary" onClick={retry}>Coba Lagi <ArrowIcon /></button>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <>
+          {/* ================= STAT CARDS ================= */}
+          <div className="container">
+            <div className="stat-row">
+              <div className="stat-card reveal show">
+                <div className="stat-icon"><BookIcon /></div>
+                <strong>{selesai}/{total}</strong>
+                <span>Materi Selesai</span>
+              </div>
+              <div className="stat-card reveal show">
+                <div className="stat-icon"><FlaskIcon /></div>
+                {eksperimen?.tersedia ? (
+                  <strong>{eksperimen.total}x</strong>
+                ) : (
+                  <strong className="stat-muted">—</strong>
+                )}
+                <span>Eksperimen Lab Virtual</span>
+                {!eksperimen?.tersedia && <em className="stat-note">Belum ada data</em>}
+              </div>
+              <div className="stat-card reveal show">
+                <div className="stat-icon"><QuizIcon /></div>
+                {kuis?.tersedia ? (
+                  <strong>{kuis.nilai_terakhir ?? 0}</strong>
+                ) : (
+                  <strong className="stat-muted">—</strong>
+                )}
+                <span>Skor Kuis Terakhir</span>
+                {!kuis?.tersedia && <em className="stat-note">Belum ada data</em>}
+              </div>
+              <div className="stat-card reveal show">
+                <div className="stat-icon"><MedalIcon /></div>
+                <strong>{lencanaDiperoleh}/{badges.length}</strong>
+                <span>Lencana Diperoleh</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ================= PROGRES MATERI ================= */}
+          <section className="section">
+            <div className="container">
+              <div className="section-head reveal">
+                <span className="eyebrow">Progres Materi</span>
+                <h2>Lanjutkan Belajarmu</h2>
+                <p>Status penyelesaian tiap modul — klik untuk melanjutkan dari sana.</p>
+              </div>
+              <div className="progress-list">
+                {items.map((m, i) => {
+                  const fillPct = m.status === "selesai" ? 100 : m.status === "berjalan" ? (m.nilai_rata ?? 0) : 0;
+                  return (
+                    <Link to={`/materi/${m.slug}`} className="progress-row reveal" style={{ transitionDelay: `${i * 60}ms` }} key={m.slug}>
+                      <div className={`progress-status ${m.status}`}>
+                        {m.status === "selesai" ? <CheckIcon /> : m.status === "belum" ? <LockIcon /> : <BookIcon />}
+                      </div>
+                      <div className="progress-main">
+                        <div className="progress-main-top">
+                          <span>{m.judul}</span>
+                          <span className="tag">{statusLabel[m.status] ?? m.status}</span>
+                        </div>
+                        <div className="progress-track">
+                          <div className="progress-fill" style={{ width: `${fillPct}%` }} />
+                        </div>
+                        {m.status === "berjalan" && (
+                          <div className="progress-sub">
+                            {m.aktivitas} aktivitas tersimpan · rata-rata nilai {m.nilai_rata ?? 0}%
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* ================= RIWAYAT KUIS ================= */}
+          <section className="section" style={{ paddingTop: 0 }}>
+            <div className="container">
+              <div className="section-head reveal">
+                <span className="eyebrow">Riwayat Kuis</span>
+                <h2>Hasil Kuis Berpikir Kausal</h2>
+                <p>Rekam jejak percobaan kuismu.</p>
+              </div>
+              <div className="empty-state reveal">
+                <div className="empty-icon"><QuizIcon /></div>
+                <h3>Belum ada hasil kuis</h3>
+                <p>Hasil Kuis Berpikir Kausal belum tersimpan di database, jadi belum ada riwayat yang bisa ditampilkan.</p>
+                <Link to="/kuis" className="btn btn-primary" style={{ marginTop: 18 }}>Mulai Kuis <ArrowIcon /></Link>
+              </div>
+            </div>
+          </section>
+
+          {/* ================= LENCANA ================= */}
+          <section className="section" style={{ paddingTop: 0 }}>
+            <div className="container">
+              <div className="section-head reveal">
+                <span className="eyebrow">Pencapaian</span>
+                <h2>Lencana Kamu</h2>
+                <p>Kumpulkan lencana dengan menyelesaikan materi, eksperimen, dan kuis.</p>
+              </div>
+              <div className="badge-grid">
+                {badges.map((b, i) => (
+                  <div className={`badge-card reveal ${b.unlocked ? "" : "locked"}`} style={{ transitionDelay: `${i * 70}ms` }} key={b.title}>
+                    <div className="badge-icon">{b.unlocked ? b.icon : <LockIcon />}</div>
+                    <h4>{b.title}</h4>
+                    <p>{b.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       <Footer />
     </>
+  );
+}
+
+// Wave divider lokal — identik dengan komponen di Materi.jsx supaya bentuk
+// gelombang di bawah hero sama persis dengan halaman Materi.
+function WaveDividerLocal({ fill, flip = false }) {
+  return (
+    <div className="wave-divider" aria-hidden="true">
+      <svg
+        viewBox="0 0 1200 120"
+        preserveAspectRatio="none"
+        style={flip ? { transform: "scaleY(-1)" } : undefined}
+      >
+        <path
+          d="M0,32 C150,85 330,95 480,55 C650,10 820,0 1000,38 C1080,56 1150,50 1200,40 L1200,120 L0,120 Z"
+          fill={fill}
+        />
+      </svg>
+    </div>
   );
 }

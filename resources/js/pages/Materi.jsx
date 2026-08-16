@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../lib/api"; // sesuaikan path jika file ini bukan di src/pages/
-import heroBg from "./hero-mangrove.png";
+import heroBg from "./konservasi-mangrove-sehat.png";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 

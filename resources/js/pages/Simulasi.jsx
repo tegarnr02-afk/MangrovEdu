@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import heroBg from "./konservasi-mangrove-sehat.png";
 
 /* ================= ICONS ================= */
 const ArrowIcon = () => (
@@ -12,6 +13,12 @@ const ArrowIcon = () => (
 const PlayIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor">
     <path d="M8 5.14v13.72c0 .8.87 1.29 1.56.86l10.6-6.86a1 1 0 0 0 0-1.72L9.56 4.28C8.87 3.85 8 4.34 8 5.14Z" />
+  </svg>
+);
+const RefreshIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+    <path d="M21 3v6h-6" />
   </svg>
 );
 const WaveIcon = () => (
@@ -52,53 +59,146 @@ const LockIcon = () => (
 );
 
 /* ================= LOGIC SIMULASI ================= */
-function kategoriKerapatan(v) {
-  if (v < 34) return "Jarang";
-  if (v < 67) return "Sedang";
-  return "Lebat";
-}
-function kategoriGelombang(v) {
-  if (v < 34) return "Tenang";
-  if (v < 67) return "Sedang";
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+// Konsisten dengan Lab Virtual: 0–33 Rendah, 34–66 Sedang, 67–100 Tinggi.
+function kategori(v) {
+  if (v <= 33) return "Rendah";
+  if (v <= 66) return "Sedang";
   return "Tinggi";
 }
+
+/**
+ * Semua hasil diturunkan secara deterministik dari dua parameter
+ * (kerapatan mangrove & tinggi gelombang). Tidak ada nilai acak.
+ */
 function jalankanSimulasi(density, wave) {
-  // Kerapatan mangrove meredam energi gelombang; gelombang tinggi mengurangi efektivitas peredaman.
-  const peredamanScore = Math.max(0, Math.min(100, density - wave * 0.4));
-  const abrasiScore = Math.max(0, Math.min(100, 100 - peredamanScore));
+  const dLevel = kategori(density);
+  const wLevel = kategori(wave);
 
-  const peredaman = peredamanScore >= 60 ? "Tinggi" : peredamanScore >= 30 ? "Sedang" : "Rendah";
-  const abrasi = abrasiScore <= 30 ? "Rendah" : abrasiScore <= 60 ? "Sedang" : "Tinggi";
-  const kondisi = abrasi === "Rendah" ? "Stabil" : abrasi === "Sedang" ? "Cukup Stabil" : "Tidak Stabil";
+  // Semakin rapat mangrove semakin kuat peredaman; semakin tinggi gelombang
+  // semakin berkurang efektivitas peredaman (energi lebih besar).
+  const protection = clamp(Math.round(density - wave * 0.5), 0, 100);
+  const abrasiScore = clamp(100 - protection, 0, 100);
 
-  const dLabel = kategoriKerapatan(density);
-  const wLabel = kategoriGelombang(wave);
+  const protectionLevel = kategori(protection);
+  const abrasiLevel = kategori(abrasiScore);
 
-  const interpretasi = `Dengan kerapatan mangrove ${dLabel.toLowerCase()} dan gelombang ${wLabel.toLowerCase()}, akar dan batang mangrove ${
-    peredaman === "Tinggi"
-      ? "mampu meredam sebagian besar energi gelombang sebelum mencapai garis pantai"
-      : peredaman === "Sedang"
-      ? "meredam sebagian energi gelombang, namun belum sepenuhnya menahan dampaknya"
-      : "belum cukup rapat untuk meredam energi gelombang secara efektif"
-  }. Akibatnya, risiko abrasi di kawasan ini tergolong ${abrasi.toLowerCase()}, sehingga kondisi pesisir saat ini ${kondisi.toLowerCase()}.`;
+  const kondisi =
+    abrasiLevel === "Rendah" ? "Relatif Terlindungi"
+    : abrasiLevel === "Sedang" ? "Perlu Perhatian"
+    : "Rentan";
+  const kondisiEmoji =
+    abrasiLevel === "Rendah" ? "🟢"
+    : abrasiLevel === "Sedang" ? "🟡"
+    : "🔴";
 
-  return { peredamanScore, abrasiScore, peredaman, abrasi, kondisi, dLabel, wLabel, interpretasi };
+  // Bahasa hati-hati (hedging) — bukan klaim absolut.
+  const peredamanText =
+    protectionLevel === "Tinggi"
+      ? "Kemampuan peredaman gelombang cenderung tinggi karena vegetasi mangrove cukup rapat, sehingga energi gelombang lebih banyak teredam sebelum mencapai garis pantai."
+      : protectionLevel === "Sedang"
+      ? "Kemampuan peredaman gelombang tergolong sedang — sebagian energi gelombang dapat diredam, namun belum sepenuhnya tertahan."
+      : "Kemampuan peredaman gelombang cenderung rendah karena vegetasi mangrove lebih terbuka, sehingga energi gelombang lebih mudah mencapai pantai.";
+
+  const abrasiText =
+    abrasiLevel === "Rendah"
+      ? "Risiko abrasi cenderung lebih rendah karena vegetasi mangrove lebih rapat dan energi gelombang lebih teredam."
+      : abrasiLevel === "Sedang"
+      ? "Risiko abrasi tergolong sedang; perlindungan vegetasi dan kekuatan gelombang relatif seimbang."
+      : "Risiko abrasi cenderung lebih tinggi karena perlindungan vegetasi lebih rendah sementara gelombang lebih kuat.";
+
+  const kondisiText =
+    kondisi === "Relatif Terlindungi"
+      ? "Kondisi pesisir relatif terlindungi dari hantaman gelombang."
+      : kondisi === "Perlu Perhatian"
+      ? "Kondisi pesisir masih perlu perhatian karena dampak gelombang belum sepenuhnya teredam."
+      : "Kondisi pesisir lebih rentan terhadap erosi dan abrasi.";
+
+  const interpretasi = `Ketika kerapatan mangrove lebih ${dLevel.toLowerCase()} dan tinggi gelombang ${wLevel.toLowerCase()}, vegetasi mangrove ${
+    protectionLevel === "Tinggi"
+      ? "cenderung memberikan perlindungan yang lebih besar terhadap energi gelombang"
+      : protectionLevel === "Sedang"
+      ? "cenderung hanya meredam sebagian energi gelombang"
+      : "cenderung kurang mampu meredam energi gelombang"
+  }. Akibatnya, risiko abrasi cenderung ${abrasiLevel.toLowerCase()} dan kondisi pesisir cenderung ${kondisi.toLowerCase()}.`;
+
+  // Visual perbandingan "sebelum vs setelah" (bukan angka acak, melainkan
+  // energi gelombang awal dikurangi kemampuan peredaman).
+  const waveBeforeCount = clamp(Math.round((wave / 100) * 6), 1, 6);
+  const waveAfterCount = clamp(Math.round(waveBeforeCount * (1 - protection / 100)), 0, 6);
+  const mangroveCount = clamp(Math.round((density / 100) * 6), 1, 6);
+
+  return {
+    density,
+    wave,
+    dLevel,
+    wLevel,
+    protection,
+    protectionLevel,
+    abrasiScore,
+    abrasiLevel,
+    kondisi,
+    kondisiEmoji,
+    peredamanText,
+    abrasiText,
+    kondisiText,
+    interpretasi,
+    waveBeforeCount,
+    waveAfterCount,
+    mangroveCount,
+  };
 }
-function tone(label) {
-  if (["Tinggi", "Stabil"].includes(label)) return "good";
-  if (["Sedang", "Cukup Stabil"].includes(label)) return "mid";
-  return "bad"; // Rendah (peredaman), Tinggi (abrasi/gelombang tanpa konteks lain ditangani di pemanggil
+
+/* ================= TONE (untuk warna kartu) ================= */
+function tonePeredaman(level) {
+  return level === "Tinggi" ? "good" : level === "Sedang" ? "mid" : "bad";
+}
+function toneAbrasi(level) {
+  return level === "Rendah" ? "good" : level === "Sedang" ? "mid" : "bad";
+}
+function toneKondisi(k) {
+  return k === "Relatif Terlindungi" ? "good" : k === "Perlu Perhatian" ? "mid" : "bad";
+}
+
+/* ================= BACA NILAI TERAKHIR DARI LAB VIRTUAL ================= */
+function readLabValue(field, fallback) {
+  try {
+    const list = JSON.parse(localStorage.getItem("labVirtualExperiments")) || [];
+    const last = list[0];
+    if (last && typeof last[field] === "number") return last[field];
+  } catch {
+    /* abaikan */
+  }
+  return fallback;
+}
+
+/* ================= GELOMBANG (path) ================= */
+function buildWavePath(offsetY, amp) {
+  const startX = -60;
+  const endX = 780;
+  const step = 180;
+  let d = `M${startX},${offsetY}`;
+  for (let x = startX; x < endX; x += step) {
+    d += ` C ${x + step * 0.33},${offsetY - amp} ${x + step * 0.66},${offsetY + amp} ${x + step},${offsetY}`;
+  }
+  d += ` L${endX},320 L${startX},320 Z`;
+  return d;
 }
 
 export default function Simulasi() {
   const navigate = useNavigate();
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem("token"));
+  const [loggedIn] = useState(() => !!localStorage.getItem("token"));
 
-  const [density, setDensity] = useState(50);
-  const [wave, setWave] = useState(50);
+  // Nilai awal diambil dari eksperimen terakhir Lab Virtual bila tersedia.
+  const [density, setDensity] = useState(() => readLabValue("density", 60));
+  const [wave, setWave] = useState(() => readLabValue("waveHeight", 40));
+
+  // phase: idle -> running -> done
+  const [phase, setPhase] = useState("idle");
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const runTimer = useRef(null);
 
   useEffect(() => {
     try {
@@ -108,6 +208,8 @@ export default function Simulasi() {
       setHistory([]);
     }
   }, []);
+
+  useEffect(() => () => clearTimeout(runTimer.current), []);
 
   useEffect(() => {
     const revealEls = document.querySelectorAll(".reveal");
@@ -120,47 +222,69 @@ export default function Simulasi() {
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.12 }
     );
     revealEls.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, [result, loggedIn]);
+  }, [phase, loggedIn]);
 
   const handleRun = () => {
-    const r = jalankanSimulasi(density, wave);
-    setResult(r);
+    if (phase === "running") return;
+    setPhase("running");
+    setResult(null);
 
-    const entry = {
-      density,
-      wave,
-      abrasi: r.abrasi,
-      kondisi: r.kondisi,
-      waktu: new Date().toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
-    };
-    const next = [entry, ...history].slice(0, 5);
-    setHistory(next);
-    try {
-      localStorage.setItem("simulasiHistory", JSON.stringify(next));
-    } catch {
-      /* abaikan kalau storage penuh/diblokir */
-    }
+    // Proses simulasi diberi jeda singkat agar animasi "menjalankan" terlihat
+    // (hasil TIDAK langsung muncul sebelum proses selesai).
+    runTimer.current = setTimeout(() => {
+      const r = jalankanSimulasi(density, wave);
+      setResult(r);
+      setPhase("done");
 
+      const entry = {
+        density,
+        wave,
+        peredaman: r.protectionLevel,
+        abrasi: r.abrasiLevel,
+        kondisi: r.kondisi,
+        waktu: new Date().toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+      };
+      const next = [entry, ...history].slice(0, 5);
+      setHistory(next);
+      try {
+        localStorage.setItem("simulasiHistory", JSON.stringify(next));
+      } catch {
+        /* abaikan kalau storage penuh/diblokir */
+      }
+
+      requestAnimationFrame(() => {
+        document.getElementById("hasil-simulasi")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }, 1600);
+  };
+
+  const handleCobaKondisiLain = () => {
+    clearTimeout(runTimer.current);
+    setResult(null);
+    setPhase("idle");
     requestAnimationFrame(() => {
-      document.getElementById("hasil-simulasi")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("kontrol-simulasi")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
 
-  const goToLogin = () => {
-    setShowLoginModal(false);
-    navigate("/login");
-  };
-
-  // Visualisasi: jumlah pohon yang tampak mengikuti kerapatan, amplitudo gelombang mengikuti tinggi gelombang.
+  // Visualisasi: jumlah pohon mengikuti kerapatan, amplitudo mengikuti tinggi gelombang.
   const totalPohon = 8;
   const pohonTerlihat = Math.round((density / 100) * totalPohon);
-  const amplitudo = 6 + (wave / 100) * 26;
-  const wavePath = (offsetY, amp) =>
-    `M0,${offsetY} C 60,${offsetY - amp} 120,${offsetY + amp} 180,${offsetY} C 240,${offsetY - amp} 300,${offsetY + amp} 360,${offsetY} C 420,${offsetY - amp} 480,${offsetY + amp} 540,${offsetY} C 600,${offsetY - amp} 660,${offsetY + amp} 720,${offsetY} L720,160 L0,160 Z`;
+  const amplitudo = 6 + (wave / 100) * 24;
+
+  const chainNodes = result
+    ? [
+        { icon: "🌱", label: "Kerapatan Mangrove", value: `${result.density}% (${result.dLevel})` },
+        { icon: "🛡️", label: "Kemampuan Perlindungan", value: result.protectionLevel },
+        { icon: "🌊", label: "Dampak Gelombang", value: result.wLevel },
+        { icon: "⚠️", label: "Risiko Abrasi", value: result.abrasiLevel },
+        { icon: "🏝️", label: "Kondisi Pesisir", value: result.kondisi },
+      ]
+    : [];
 
   return (
     <>
@@ -193,12 +317,32 @@ export default function Simulasi() {
         .btn svg{ width:16px; height:16px; flex-shrink:0; }
         .btn-primary{ background:var(--amber); color:var(--canopy); box-shadow:0 12px 24px -10px rgba(232,163,61,0.7); }
         .btn-primary:hover{ transform:translateY(-3px); box-shadow:0 16px 28px -10px rgba(232,163,61,0.85); }
-        .btn-primary:disabled{ opacity:0.5; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+        .btn-primary:disabled{ opacity:0.6; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+        .btn-ghost{ background:var(--tide-pale); color:var(--estuary); }
+        .btn-ghost:hover{ transform:translateY(-3px); }
 
         /* ===== Banner ===== */
-        .page-banner{ background:var(--canopy); padding:130px 0 60px; }
-        .page-banner h1{ color:var(--paper); font-size:clamp(1.9rem,3.6vw,2.7rem); max-width:640px; margin-bottom:14px; }
-        .page-banner p{ color:rgba(251,250,245,0.78); max-width:600px; }
+        .wave-divider{ position:absolute; left:0; right:0; bottom:-1px; line-height:0; pointer-events:none; z-index:5; }
+        .wave-divider svg{ display:block; width:100%; height:80px; }
+        .page-banner{
+          position:relative;
+          min-height:62vh;
+          display:flex; align-items:flex-end;
+          background-image:linear-gradient(90deg, rgba(10,22,17,0.86) 0%, rgba(10,22,17,0.62) 40%, rgba(10,22,17,0.3) 75%), url(${heroBg});
+          background-size:cover; background-position:center 32%;
+          padding:90px 0 120px;
+        }
+        .page-banner .container{
+          margin-left:0;
+          max-width:100%;
+          padding-left:60px;
+        }
+        .page-banner h1{
+          color:var(--paper); font-size:clamp(2.1rem,4vw,3.1rem); max-width:640px; margin-bottom:18px;
+        }
+        .page-banner p{
+          color:rgba(251,250,245,0.82); max-width:560px; font-size:1.02rem;
+        }
 
         .section{ padding:70px 0; }
         .section-head{ max-width:640px; margin-bottom:36px; }
@@ -218,15 +362,16 @@ export default function Simulasi() {
         .gate-icon svg{ width:28px; height:28px; }
         .gate-card p{ color:#556961; margin:12px 0 26px; }
 
-        /* ===== Lab: kontrol + visualisasi ===== */
+        /* ===== Kontrol + visualisasi ===== */
         .lab-grid{ display:grid; grid-template-columns:1fr 1fr; gap:36px; align-items:start; }
         .lab-controls{ background:var(--paper); border-radius:var(--radius-lg); padding:32px; box-shadow:0 16px 32px -20px rgba(15,36,29,0.18); }
         .control-block + .control-block{ margin-top:30px; }
         .control-label{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
         .control-label span:first-child{ font-weight:700; font-size:0.95rem; color:var(--canopy); display:flex; align-items:center; gap:8px; }
         .control-label span:first-child svg{ width:18px; height:18px; color:var(--estuary); }
+        .control-value{ font-family:'Fraunces', serif; font-size:1.05rem; font-weight:600; color:var(--estuary); }
         .control-tag{
-          font-family:'Space Mono', monospace; font-size:0.72rem; font-weight:700;
+          font-family:'Space Mono', monospace; font-size:0.7rem; font-weight:700;
           padding:4px 10px; border-radius:999px; background:var(--tide-pale); color:var(--estuary);
         }
         input[type="range"]{
@@ -245,26 +390,39 @@ export default function Simulasi() {
         }
         .control-scale{ display:flex; justify-content:space-between; font-size:0.72rem; color:#7A8A83; margin-top:8px; }
         .run-btn{ width:100%; justify-content:center; margin-top:34px; padding:15px; font-size:0.95rem; }
+        .run-hint{ text-align:center; font-size:0.8rem; color:#7A8A83; margin-top:14px; }
 
         .lab-visual{
           position:relative; border-radius:var(--radius-lg); overflow:hidden;
-          background:linear-gradient(180deg,#BFE0DA 0%,#8FC2B4 55%,#3D6E52 100%);
+          background:linear-gradient(180deg,#CBE8F3 0%,#EAF6FB 34%,#F2E9D2 34%,#F2E9D2 50%,#7FB8D4 50%,#4C8DB0 100%);
           min-height:340px; box-shadow:0 16px 32px -20px rgba(15,36,29,0.3);
         }
         .lab-visual svg{ position:absolute; inset:0; width:100%; height:100%; }
         .lab-visual-caption{
           position:absolute; bottom:14px; left:0; right:0; text-align:center;
-          font-family:'Space Mono', monospace; font-size:0.72rem; color:rgba(255,255,255,0.85);
-          text-shadow:0 1px 3px rgba(0,0,0,0.4);
+          font-family:'Space Mono', monospace; font-size:0.72rem; color:rgba(255,255,255,0.9);
+          text-shadow:0 1px 3px rgba(0,0,0,0.45);
         }
         .tree-shape{ transition:opacity .4s ease; }
-        .wave-path{ transition:d .35s ease; }
+        .wave-anim{ animation:waveDrift 4.2s ease-in-out infinite alternate; }
+        .wave-anim.wave-back{ animation-duration:5.6s; animation-delay:.6s; }
+        .lab-visual.running .wave-anim{ animation-duration:1.3s; }
+        @keyframes waveDrift{ from{ transform:translateX(0); } to{ transform:translateX(-24px); } }
+
+        .visual-overlay{
+          position:absolute; inset:0; display:flex; flex-direction:column; gap:14px;
+          align-items:center; justify-content:center; background:rgba(15,36,29,0.4);
+          color:var(--paper); font-weight:700; font-size:0.92rem; z-index:2; backdrop-filter:blur(2px);
+        }
+        .spinner{ width:32px; height:32px; border-radius:50%; border:3px solid rgba(251,250,245,0.35); border-top-color:var(--amber); animation:spin .8s linear infinite; }
+        @keyframes spin{ to{ transform:rotate(360deg); } }
 
         /* ===== Hasil simulasi ===== */
         .hasil-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
         .hasil-card{
-          background:var(--paper); border-radius:var(--radius-md); padding:26px 24px;
+          background:var(--paper); border-radius:var(--radius-md); padding:26px 22px;
           box-shadow:0 12px 26px -18px rgba(15,36,29,0.2); text-align:center;
+          display:flex; flex-direction:column;
         }
         .hasil-icon{
           width:48px; height:48px; margin:0 auto 14px; border-radius:50%;
@@ -274,15 +432,45 @@ export default function Simulasi() {
         .hasil-card.good .hasil-icon{ background:#E4EFE7; color:var(--estuary); }
         .hasil-card.mid .hasil-icon{ background:#FBEEDA; color:var(--amber-deep); }
         .hasil-card.bad .hasil-icon{ background:#F8E4E7; color:var(--danger); }
-        .hasil-card h4{ font-size:0.82rem; color:#7A8A83; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px; }
-        .hasil-value{ font-family:'Fraunces', serif; font-size:1.5rem; font-weight:600; }
+        .hasil-card h4{ font-size:0.8rem; color:#7A8A83; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:8px; }
+        .hasil-value{ font-family:'Fraunces', serif; font-size:1.45rem; font-weight:600; margin-bottom:6px; }
         .hasil-card.good .hasil-value{ color:var(--estuary); }
         .hasil-card.mid .hasil-value{ color:var(--amber-deep); }
         .hasil-card.bad .hasil-value{ color:var(--danger); }
+        .hasil-text{ font-size:0.82rem; color:#556961; margin-top:auto; line-height:1.5; }
 
+        .indicator-track{ height:9px; border-radius:99px; background:var(--sand-deep); overflow:hidden; margin:6px 0 14px; }
+        .indicator-fill{ height:100%; border-radius:99px; background:var(--estuary); transition:width .6s ease; }
+
+        .kondisi-visual{ display:flex; flex-direction:column; align-items:center; gap:8px; margin:4px 0 14px; }
+        .tree-row{ display:flex; gap:4px; font-size:1.25rem; }
+        .kondisi-flow{ font-size:1rem; letter-spacing:2px; color:var(--canopy); }
+
+        /* ===== Perbandingan sebelum/setelah ===== */
+        .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+        .compare-panel{ background:var(--paper); border-radius:var(--radius-md); padding:26px 22px; text-align:center; box-shadow:0 12px 26px -18px rgba(15,36,29,0.18); }
+        .compare-panel h4{ font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:#7A8A83; margin-bottom:14px; }
+        .compare-layers{ display:flex; flex-direction:column; align-items:center; gap:8px; font-size:1.35rem; line-height:1.4; }
+        .compare-layers .waves{ font-size:1.5rem; letter-spacing:2px; }
+        .compare-layers .mangrove{ letter-spacing:4px; }
+        .compare-note{ font-size:0.76rem; color:#7A8A83; margin-top:10px; }
+
+        /* ===== Interpretasi ===== */
+        .interpretasi-wrap{ display:grid; grid-template-columns:1fr 1.3fr; gap:28px; align-items:stretch; }
+        .chain-panel{ background:var(--paper); border-radius:var(--radius-lg); padding:28px 24px; box-shadow:0 16px 32px -20px rgba(15,36,29,0.18); }
+        .chain-panel h4{ font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; color:#7A8A83; margin-bottom:18px; text-align:center; }
+        .chain{ display:flex; flex-direction:column; align-items:center; }
+        .chain-node{
+          background:var(--tide-pale); border-radius:12px; padding:10px 18px;
+          display:flex; align-items:center; gap:12px; min-width:230px;
+        }
+        .chain-node .c-icon{ font-size:1.15rem; }
+        .chain-node .c-label{ font-size:0.78rem; color:#4C5F58; }
+        .chain-node .c-value{ font-weight:700; font-size:0.88rem; color:var(--canopy); }
+        .chain-arrow{ color:var(--estuary); font-size:1.15rem; line-height:1; margin:4px 0; }
         .interpretasi-box{
-          background:var(--tide-pale); border-radius:var(--radius-md); padding:24px 26px; margin-top:26px;
-          font-size:0.95rem; color:#243D33; line-height:1.65;
+          background:var(--tide-pale); border-radius:var(--radius-md); padding:26px 28px;
+          font-size:0.95rem; color:#243D33; line-height:1.7; display:flex; flex-direction:column; justify-content:center;
         }
         .interpretasi-box strong{ color:var(--canopy); }
 
@@ -293,6 +481,13 @@ export default function Simulasi() {
         .grafik-label{ display:flex; justify-content:space-between; font-size:0.88rem; font-weight:700; color:var(--canopy); margin-bottom:8px; }
         .grafik-bar-bg{ height:14px; border-radius:99px; background:var(--sand-deep); overflow:hidden; }
         .grafik-bar-fill{ height:100%; border-radius:99px; transition:width .6s ease; }
+
+        /* ===== Note box (Amati dan Bandingkan) ===== */
+        .note-box{ background:var(--tide-pale); border-left:4px solid var(--amber); border-radius:var(--radius-md); padding:26px 28px; }
+        .note-box h3{ font-size:1.1rem; margin-bottom:6px; }
+        .note-box .note-list{ margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+        .note-box .note-item{ font-size:0.92rem; color:#243D33; display:flex; gap:10px; }
+        .note-box .note-item span{ color:var(--estuary); font-weight:700; }
 
         /* ===== Riwayat ===== */
         .riwayat-list{ display:flex; flex-direction:column; gap:10px; }
@@ -317,35 +512,12 @@ export default function Simulasi() {
         .cta-box h3{ color:var(--paper); font-size:1.3rem; margin-bottom:6px; }
         .cta-box p{ color:rgba(251,250,245,0.75); font-size:0.92rem; }
 
-        /* ===== Login modal (identik pola Materi.jsx) ===== */
-        .login-modal-overlay{
-          position:fixed; inset:0; background:rgba(15,36,29,0.55); backdrop-filter:blur(3px);
-          display:flex; align-items:center; justify-content:center; z-index:300; padding:20px;
-        }
-        .login-modal{
-          background:var(--paper); border-radius:var(--radius-lg); padding:40px 34px;
-          max-width:380px; width:100%; text-align:center; position:relative;
-        }
-        .login-modal-close{
-          position:absolute; top:16px; right:16px; width:32px; height:32px; border:none; border-radius:50%;
-          background:var(--sand-deep); color:var(--canopy); display:flex; align-items:center; justify-content:center; cursor:pointer;
-        }
-        .login-modal-close svg{ width:16px; height:16px; }
-        .login-modal-icon{
-          width:56px; height:56px; margin:0 auto 18px; border-radius:50%;
-          background:var(--tide-pale); color:var(--estuary); display:flex; align-items:center; justify-content:center;
-        }
-        .login-modal-icon svg{ width:26px; height:26px; }
-        .login-modal h3{ font-size:1.35rem; margin-bottom:10px; }
-        .login-modal p{ color:#556961; font-size:0.92rem; margin-bottom:26px; }
-        .login-modal-actions{ display:flex; flex-direction:column; gap:10px; }
-        .login-modal-actions .btn-primary{ width:100%; justify-content:center; }
-        .login-modal-cancel{ background:none; border:none; color:#7A8A83; font-weight:600; font-size:0.88rem; cursor:pointer; }
-        .login-modal-cancel:hover{ color:var(--canopy); }
-
         @media (max-width:900px){
           .lab-grid{ grid-template-columns:1fr; }
           .hasil-grid{ grid-template-columns:1fr; }
+          .compare-grid{ grid-template-columns:1fr; }
+          .interpretasi-wrap{ grid-template-columns:1fr; }
+          .page-banner{ min-height:50vh; }
         }
       `}</style>
 
@@ -354,13 +526,13 @@ export default function Simulasi() {
       {/* ================= BANNER ================= */}
       <section className="page-banner">
         <div className="container">
-          <span className="eyebrow reveal" style={{ color: "var(--amber)" }}>Lab Virtual &amp; Simulasi</span>
-          <h1 className="reveal">Simulasi Peredaman Gelombang</h1>
+          <span className="eyebrow reveal" style={{ color: "var(--amber)" }}>Simulasi Pesisir</span>
+          <h1 className="reveal">Simulasi Ekosistem Mangrove</h1>
           <p className="reveal">
-            Atur kerapatan mangrove dan tinggi gelombang, lalu jalankan simulasi
-            untuk melihat pengaruhnya terhadap risiko abrasi dan kestabilan pesisir.
+            Jalankan simulasi dan amati hubungan antara kerapatan mangrove, tinggi gelombang, perlindungan pesisir, dan risiko abrasi.
           </p>
         </div>
+        <WaveDividerLocal fill="var(--sand)" />
       </section>
 
       {!loggedIn ? (
@@ -380,12 +552,12 @@ export default function Simulasi() {
       ) : (
         <>
           {/* ================= KONTROL + VISUALISASI ================= */}
-          <section className="section">
+          <section className="section" id="kontrol-simulasi">
             <div className="container">
               <div className="section-head reveal">
-                <span className="eyebrow">Kontrol Simulasi</span>
-                <h2>Atur Variabelnya</h2>
-                <p>Geser slider untuk mengubah kondisi, lalu perhatikan visualisasi di sebelah kanan berubah secara langsung.</p>
+                <span className="eyebrow">Variabel Simulasi</span>
+                <h2>Atur Kondisi Pesisir</h2>
+                <p>Tentukan kerapatan mangrove dan tinggi gelombang, lalu jalankan simulasi untuk melihat hubungan sebab-akibatnya.</p>
               </div>
 
               <div className="lab-grid">
@@ -393,7 +565,7 @@ export default function Simulasi() {
                   <div className="control-block">
                     <div className="control-label">
                       <span><LeafIcon /> Kerapatan Mangrove</span>
-                      <span className="control-tag">{kategoriKerapatan(density)}</span>
+                      <span className="control-tag">{kategori(density)}</span>
                     </div>
                     <input
                       type="range"
@@ -403,13 +575,13 @@ export default function Simulasi() {
                       onChange={(e) => setDensity(Number(e.target.value))}
                       style={{ "--val": `${density}%` }}
                     />
-                    <div className="control-scale"><span>Jarang</span><span>Sedang</span><span>Lebat</span></div>
+                    <div className="control-scale"><span>0%</span><span>Nilai: {density}%</span><span>100%</span></div>
                   </div>
 
                   <div className="control-block">
                     <div className="control-label">
                       <span><WaveIcon /> Tinggi Gelombang</span>
-                      <span className="control-tag">{kategoriGelombang(wave)}</span>
+                      <span className="control-tag">{kategori(wave)}</span>
                     </div>
                     <input
                       type="range"
@@ -419,97 +591,236 @@ export default function Simulasi() {
                       onChange={(e) => setWave(Number(e.target.value))}
                       style={{ "--val": `${wave}%` }}
                     />
-                    <div className="control-scale"><span>Tenang</span><span>Sedang</span><span>Tinggi</span></div>
+                    <div className="control-scale"><span>0%</span><span>Nilai: {wave}%</span><span>100%</span></div>
                   </div>
 
-                  <button className="btn btn-primary run-btn" onClick={handleRun}>
-                    <PlayIcon /> Jalankan Simulasi
+                  <button className="btn btn-primary run-btn" onClick={handleRun} disabled={phase === "running"}>
+                    {phase === "running" ? (
+                      <>
+                        <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: "var(--canopy)", borderColor: "rgba(15,36,29,0.25)" }} />
+                        Menjalankan simulasi…
+                      </>
+                    ) : (
+                      <>
+                        <PlayIcon /> Jalankan Simulasi
+                      </>
+                    )}
                   </button>
+                  {phase === "idle" && <p className="run-hint">Atur kondisi simulasi lalu tekan Jalankan Simulasi.</p>}
                 </div>
 
-                <div className="lab-visual reveal">
+                <div className={`lab-visual reveal ${phase === "running" ? "running" : ""}`}>
                   <svg viewBox="0 0 720 320" preserveAspectRatio="none" aria-hidden="true">
-                    {/* Langit sudah dari background gradient container */}
+                    {/* Daratan / garis pantai di belakang mangrove */}
+                    <rect x="0" y="140" width="720" height="70" fill="#E9E2C8" />
+                    {/* Mangrove — jumlah mengikuti kerapatan */}
                     {Array.from({ length: totalPohon }).map((_, i) => {
                       const x = 40 + i * ((720 - 80) / (totalPohon - 1));
                       const visible = i < pohonTerlihat;
                       return (
                         <g key={i} className="tree-shape" style={{ opacity: visible ? 1 : 0.12 }}>
-                          <path d={`M${x - 3} 230 L${x - 3} 260 L${x + 3} 260 L${x + 3} 230 Z`} fill="#3B2A1E" />
-                          <ellipse cx={x} cy={205} rx="26" ry="30" fill="#2F6B57" />
-                          <ellipse cx={x - 10} cy={195} rx="16" ry="18" fill="#3D8267" />
-                          <ellipse cx={x + 12} cy={198} rx="16" ry="18" fill="#3D8267" />
+                          <path d={`M${x - 3} 210 L${x - 3} 244 L${x + 3} 244 L${x + 3} 210 Z`} fill="#3B2A1E" />
+                          <ellipse cx={x} cy={185} rx="26" ry="30" fill="#2F6B57" />
+                          <ellipse cx={x - 10} cy={175} rx="16" ry="18" fill="#3D8267" />
+                          <ellipse cx={x + 12} cy={178} rx="16" ry="18" fill="#3D8267" />
                         </g>
                       );
                     })}
-                    <path className="wave-path" d={wavePath(255, amplitudo)} fill="#1E4531" opacity="0.85" />
-                    <path className="wave-path" d={wavePath(272, amplitudo * 0.75)} fill="#163A29" opacity="0.9" />
+                    {/* Laut + gelombang (bergerak) */}
+                    <g className="wave-anim">
+                      <path d={buildWavePath(226, amplitudo)} fill="#2E6E8E" opacity="0.85" />
+                    </g>
+                    <g className="wave-anim wave-back">
+                      <path d={buildWavePath(244, amplitudo * 0.7)} fill="#1F5470" opacity="0.9" />
+                    </g>
                   </svg>
                   <div className="lab-visual-caption">
-                    {pohonTerlihat}/{totalPohon} rumpun mangrove &middot; amplitudo gelombang {Math.round(amplitudo)}px
+                    {pohonTerlihat}/{totalPohon} rumpun mangrove &middot; gelombang {kategori(wave).toLowerCase()}
                   </div>
+
+                  {phase === "running" && (
+                    <div className="visual-overlay">
+                      <span className="spinner" />
+                      <span>🔬 Menjalankan simulasi…</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </section>
 
           {/* ================= HASIL SIMULASI ================= */}
-          {result && (
+          {phase === "done" && result && (
             <section className="section" id="hasil-simulasi" style={{ background: "var(--sand-deep)" }}>
               <div className="container">
                 <div className="section-head reveal">
-                  <span className="eyebrow">Hasil Simulasi</span>
-                  <h2>Dampak Terhadap Pesisir</h2>
-                  <p>Berdasarkan kombinasi kerapatan {result.dLabel.toLowerCase()} dan gelombang {result.wLabel.toLowerCase()} yang kamu atur.</p>
+                  <span className="eyebrow">📊 Hasil Simulasi</span>
+                  <h2>Hasil Simulasi</h2>
+                  <p>Berdasarkan kombinasi kerapatan mangrove {result.density}% dan tinggi gelombang {result.wave}% yang kamu jalankan.</p>
                 </div>
 
                 <div className="hasil-grid">
-                  <div className={`hasil-card reveal ${tone(result.peredaman)}`}>
+                  <div className={`hasil-card reveal ${tonePeredaman(result.protectionLevel)}`}>
                     <div className="hasil-icon"><ShieldIcon /></div>
-                    <h4>Peredaman Gelombang</h4>
-                    <div className="hasil-value">{result.peredaman}</div>
+                    <h4>Kemampuan Peredaman Gelombang</h4>
+                    <div className="hasil-value">{result.protectionLevel}</div>
+                    <div className="indicator-track">
+                      <div className="indicator-fill" style={{ width: `${result.protection}%` }} />
+                    </div>
+                    <p className="hasil-text">{result.peredamanText}</p>
                   </div>
-                  <div className={`hasil-card reveal ${result.abrasi === "Rendah" ? "good" : result.abrasi === "Sedang" ? "mid" : "bad"}`} style={{ transitionDelay: "80ms" }}>
+
+                  <div className={`hasil-card reveal ${toneAbrasi(result.abrasiLevel)}`} style={{ transitionDelay: "80ms" }}>
                     <div className="hasil-icon"><WaveIcon /></div>
                     <h4>Risiko Abrasi</h4>
-                    <div className="hasil-value">{result.abrasi}</div>
+                    <div className="hasil-value">{result.abrasiLevel}</div>
+                    <div className="indicator-track">
+                      <div className="indicator-fill" style={{ width: `${result.abrasiScore}%`, background: "var(--danger)" }} />
+                    </div>
+                    <p className="hasil-text">{result.abrasiText}</p>
                   </div>
-                  <div className={`hasil-card reveal ${tone(result.kondisi)}`} style={{ transitionDelay: "160ms" }}>
+
+                  <div className={`hasil-card reveal ${toneKondisi(result.kondisi)}`} style={{ transitionDelay: "160ms" }}>
                     <div className="hasil-icon"><AnchorIcon /></div>
                     <h4>Kondisi Pesisir</h4>
-                    <div className="hasil-value">{result.kondisi}</div>
+                    <div className="hasil-value">{result.kondisiEmoji} {result.kondisi}</div>
+                    <div className="kondisi-visual">
+                      <div className="tree-row">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <span key={i} style={{ opacity: i < result.mangroveCount ? 1 : 0.15 }}>🌱</span>
+                        ))}
+                      </div>
+                      <div className="kondisi-flow">
+                        {Array.from({ length: result.waveAfterCount }).map((_, i) => <span key={i}>🌊</span>)} → 🛡️ → 🏝️
+                      </div>
+                    </div>
+                    <p className="hasil-text">{result.kondisiText}</p>
                   </div>
                 </div>
 
-                <div className="interpretasi-box reveal">
-                  <strong>Interpretasi: </strong>{result.interpretasi}
+                <div style={{ textAlign: "center", marginTop: 28 }}>
+                  <button className="btn btn-ghost" onClick={handleCobaKondisiLain}>
+                    <RefreshIcon /> Coba Kondisi Lain
+                  </button>
                 </div>
               </div>
             </section>
           )}
 
-          {/* ================= GRAFIK SIMULASI ================= */}
-          {result && (
+          {/* ================= PERBANDINGAN SEBELUM/SETELAH ================= */}
+          {phase === "done" && result && (
             <section className="section">
               <div className="container">
                 <div className="section-head reveal">
-                  <span className="eyebrow">Grafik Simulasi</span>
-                  <h2>Perbandingan Skor</h2>
-                  <p>Semakin tinggi kerapatan mangrove, semakin besar kemampuan peredaman gelombang — dan semakin kecil skor risiko abrasinya.</p>
+                  <span className="eyebrow">Perbandingan</span>
+                  <h2>Sebelum &amp; Setelah Gelombang</h2>
+                  <p>Amati perubahan energi gelombang saat melewati vegetasi mangrove.</p>
+                </div>
+                <div className="compare-grid">
+                  <div className="compare-panel reveal">
+                    <h4>Sebelum Gelombang</h4>
+                    <div className="compare-layers">
+                      <span className="waves">{"🌊".repeat(result.waveBeforeCount)}</span>
+                      <span className="mangrove">{"🌱".repeat(result.mangroveCount)}</span>
+                      <span>🏝️</span>
+                    </div>
+                    <p className="compare-note">Energi gelombang awal: {result.wave}%</p>
+                  </div>
+                  <div className="compare-panel reveal" style={{ transitionDelay: "80ms" }}>
+                    <h4>Setelah Gelombang</h4>
+                    <div className="compare-layers">
+                      <span className="waves">{"🌊".repeat(result.waveAfterCount) || "·"}</span>
+                      <span className="mangrove">{"🌱".repeat(result.mangroveCount)}</span>
+                      <span>🏝️</span>
+                    </div>
+                    <p className="compare-note">Energi gelombang tersisa: {Math.round(result.waveBeforeCount === 0 ? 0 : (result.waveAfterCount / result.waveBeforeCount) * 100)}% dari awal</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ================= INTERPRETASI ================= */}
+          {phase === "done" && result && (
+            <section className="section" style={{ background: "var(--sand-deep)" }}>
+              <div className="container">
+                <div className="section-head reveal">
+                  <span className="eyebrow">🔗 Interpretasi</span>
+                  <h2>Hubungan Sebab-Akibat</h2>
+                  <p>Rantai sebab-akibat yang menghubungkan kondisi mangrove hingga kondisi pesisir.</p>
+                </div>
+
+                <div className="interpretasi-wrap">
+                  <div className="chain-panel reveal">
+                    <h4>Rantai Sebab-Akibat</h4>
+                    <div className="chain">
+                      {chainNodes.map((n, i) => (
+                        <React.Fragment key={n.label}>
+                          {i > 0 && <span className="chain-arrow">↓</span>}
+                          <div className="chain-node">
+                            <span className="c-icon">{n.icon}</span>
+                            <div>
+                              <div className="c-label">{n.label}</div>
+                              <div className="c-value">{n.value}</div>
+                            </div>
+                          </div>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="interpretasi-box reveal">
+                    <strong>Interpretasi: </strong>{result.interpretasi}
+                    <p style={{ marginTop: 14, fontSize: "0.88rem", color: "#3A554B" }}>
+                      Secara umum, ketika kerapatan mangrove lebih tinggi, vegetasi dapat memberikan
+                      perlindungan yang lebih besar terhadap energi gelombang. Sebaliknya, ketika mangrove
+                      berkurang dan gelombang tinggi, wilayah pesisir menjadi lebih rentan.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ================= GRAFIK ================= */}
+          {phase === "done" && result && (
+            <section className="section">
+              <div className="container">
+                <div className="section-head reveal">
+                  <span className="eyebrow">Grafik</span>
+                  <h2>Skor Hasil Simulasi</h2>
+                  <p>Perbandingan nilai dari kombinasi kondisi yang kamu jalankan.</p>
                 </div>
 
                 <div className="grafik-box reveal">
                   <div className="grafik-row">
-                    <div className="grafik-label"><span>Kerapatan Mangrove</span><span>{density}%</span></div>
-                    <div className="grafik-bar-bg"><div className="grafik-bar-fill" style={{ width: `${density}%`, background: "var(--estuary)" }} /></div>
+                    <div className="grafik-label"><span>Kerapatan Mangrove</span><span>{result.density}%</span></div>
+                    <div className="grafik-bar-bg"><div className="grafik-bar-fill" style={{ width: `${result.density}%`, background: "var(--estuary)" }} /></div>
                   </div>
                   <div className="grafik-row">
-                    <div className="grafik-label"><span>Kemampuan Peredaman Gelombang</span><span>{Math.round(result.peredamanScore)}%</span></div>
-                    <div className="grafik-bar-bg"><div className="grafik-bar-fill" style={{ width: `${result.peredamanScore}%`, background: "var(--amber)" }} /></div>
+                    <div className="grafik-label"><span>Kemampuan Peredaman Gelombang</span><span>{result.protection}%</span></div>
+                    <div className="grafik-bar-bg"><div className="grafik-bar-fill" style={{ width: `${result.protection}%`, background: "var(--amber)" }} /></div>
                   </div>
                   <div className="grafik-row">
-                    <div className="grafik-label"><span>Skor Risiko Abrasi</span><span>{Math.round(result.abrasiScore)}%</span></div>
+                    <div className="grafik-label"><span>Skor Risiko Abrasi</span><span>{result.abrasiScore}%</span></div>
                     <div className="grafik-bar-bg"><div className="grafik-bar-fill" style={{ width: `${result.abrasiScore}%`, background: "var(--danger)" }} /></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ================= CATATAN PEMBELAJARAN ================= */}
+          {phase === "done" && result && (
+            <section className="section" style={{ paddingTop: 0 }}>
+              <div className="container">
+                <div className="note-box reveal">
+                  <h3>💡 Amati dan Bandingkan</h3>
+                  <p style={{ color: "#4C5F58", fontSize: "0.9rem" }}>Gunakan tombol “Coba Kondisi Lain” lalu jawab pertanyaan berikut melalui pengamatanmu.</p>
+                  <div className="note-list">
+                    <div className="note-item"><span>1.</span> Bagaimana hasil simulasi berubah ketika kerapatan mangrove dikurangi?</div>
+                    <div className="note-item"><span>2.</span> Bagaimana hasil simulasi berubah ketika tinggi gelombang dinaikkan?</div>
+                    <div className="note-item"><span>3.</span> Apa hubungan antara kerapatan mangrove, gelombang, dan risiko abrasi?</div>
                   </div>
                 </div>
               </div>
@@ -543,7 +854,7 @@ export default function Simulasi() {
           )}
 
           {/* ================= CTA ================= */}
-          <section className="section">
+          <section className="section" style={{ paddingTop: history.length > 0 ? 0 : undefined }}>
             <div className="container">
               <div className="cta-box reveal">
                 <div>
@@ -559,5 +870,24 @@ export default function Simulasi() {
 
       <Footer />
     </>
+  );
+}
+
+// Wave divider lokal — identik dengan komponen di Materi.jsx supaya bentuk
+// gelombang di bawah hero sama persis dengan halaman Materi.
+function WaveDividerLocal({ fill, flip = false }) {
+  return (
+    <div className="wave-divider" aria-hidden="true">
+      <svg
+        viewBox="0 0 1200 120"
+        preserveAspectRatio="none"
+        style={flip ? { transform: "scaleY(-1)" } : undefined}
+      >
+        <path
+          d="M0,32 C150,85 330,95 480,55 C650,10 820,0 1000,38 C1080,56 1150,50 1200,40 L1200,120 L0,120 Z"
+          fill={fill}
+        />
+      </svg>
+    </div>
   );
 }

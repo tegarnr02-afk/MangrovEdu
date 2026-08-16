@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Materi2JawabanController;
 use App\Http\Controllers\Api\Materi3JawabanController;
 use App\Http\Controllers\Api\Materi4JawabanController;
 use App\Http\Controllers\Api\Materi5JawabanController;
+use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -15,6 +16,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/materi/progress', [MateriProgressController::class, 'index']);
     Route::post('/materi/{slug}/complete', [MateriProgressController::class, 'complete']);
