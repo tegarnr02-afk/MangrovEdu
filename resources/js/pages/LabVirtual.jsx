@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import api from "../lib/api";
 import heroBg from "./konservasi-mangrove-sehat.png";
 import backgroundImg from "./background.png";
 import mangroveImg from "./mangrove.png";
@@ -178,13 +179,18 @@ function CausalNode({ icon, label, value, note, fill, tone }) {
 export default function LabVirtual() {
   const [density, setDensity] = useState(60);
   const [waveHeight, setWaveHeight] = useState(40);
-  const [experimentCount, setExperimentCount] = useState(() => {
-    try {
-      return (JSON.parse(localStorage.getItem("labVirtualExperiments")) || []).length;
-    } catch {
-      return 0;
-    }
-  });
+  const [experimentCount, setExperimentCount] = useState(0);
+
+  // Ambil jumlah percobaan yang sudah tersimpan di database (bukan localStorage lagi).
+  useEffect(() => {
+    let cancelled = false;
+    api.get("/lab-virtual/eksperimen")
+      .then((res) => {
+        if (!cancelled) setExperimentCount(res.data?.data?.total ?? 0);
+      })
+      .catch(() => { /* biarkan tetap 0 kalau gagal ambil */ });
+    return () => { cancelled = true; };
+  }, []);
 
   const DEFAULT_DENSITY = 60;
   const DEFAULT_WAVE = 40;
@@ -223,21 +229,20 @@ export default function LabVirtual() {
   };
 
   // "🔬 Coba Kondisi Lain": catat eksperimen saat ini (kerapatan, gelombang,
-  // waktu) ke localStorage — pola yang sama dipakai Simulasi.jsx — lalu geser
-  // ke kombinasi lain agar siswa tidak hanya mengamati satu kondisi.
+  // perlindungan, skor abrasi) ke database, lalu geser ke kombinasi lain
+  // agar siswa tidak hanya mengamati satu kondisi.
   const handleTryOther = () => {
-    try {
-      const raw = localStorage.getItem("labVirtualExperiments");
-      const list = raw ? JSON.parse(raw) : [];
-      const next = [
-        { density, waveHeight, waktu: new Date().toISOString() },
-        ...list,
-      ].slice(0, 20);
-      localStorage.setItem("labVirtualExperiments", JSON.stringify(next));
-      setExperimentCount(next.length);
-    } catch {
-      /* abaikan kalau storage penuh/diblokir */
-    }
+    api.post("/lab-virtual/eksperimen", {
+      kerapatan_mangrove: density,
+      tinggi_gelombang: waveHeight,
+      perlindungan: protection,
+      skor_abrasi: abrasionScore,
+    })
+      .then((res) => {
+        if (typeof res.data?.total === "number") setExperimentCount(res.data.total);
+        else setExperimentCount((c) => c + 1);
+      })
+      .catch(() => { /* tetap lanjut walau gagal tersimpan */ });
 
     const presets = [
       [85, 20],

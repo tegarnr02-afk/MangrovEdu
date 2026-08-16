@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\EksperimenLog;
 use App\Models\Materi1Jawaban;
 use App\Models\Materi2Jawaban;
 use App\Models\Materi3Jawaban;
@@ -23,11 +24,12 @@ class DashboardController extends Controller
      * Sumber data (tabel yang sudah dipakai aplikasi):
      *  - user_materi_progress : materi mana saja yang sudah selesai (materi_slug, completed_at)
      *  - materi1_jawaban .. materi5_jawaban : aktivitas/jawaban per materi (item_type, item_id, nilai)
+     *  - eksperimen_log : riwayat percobaan Lab Virtual (kerapatan, gelombang, hasil)
      *  - users : nama/email user
      *
-     * Catatan: eksperimen lab virtual & hasil kuis (Berpikir Kausal) BELUM disimpan
-     * ke database, jadi bagian tersebut dikembalikan sebagai "tersedia: false" dan
-     * frontend menampilkan empty-state "Belum ada data" — bukan angka palsu.
+     * Catatan: hasil kuis (Berpikir Kausal) BELUM disimpan ke database, jadi
+     * bagian tersebut dikembalikan sebagai "tersedia: false" dan frontend
+     * menampilkan empty-state "Belum ada data" — bukan angka palsu.
      */
     public function index(Request $request)
     {
@@ -83,6 +85,13 @@ class DashboardController extends Controller
             ? (int) round(($selesaiCount / $totalMateri) * 100)
             : 0;
 
+        // Eksperimen Lab Virtual — sekarang sudah tersimpan di database.
+        $eksperimenTotal = EksperimenLog::where('user_id', $user->id)->count();
+        $eksperimenList  = EksperimenLog::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get(['kerapatan_mangrove', 'tinggi_gelombang', 'perlindungan', 'skor_abrasi', 'created_at']);
+
         return response()->json([
             'success' => true,
             'data'    => [
@@ -97,12 +106,13 @@ class DashboardController extends Controller
                 ],
                 'progres_keseluruhan' => $progresTotal,
 
-                // Data yang belum tersedia di database (jangan dibuat angkanya).
                 'eksperimen' => [
-                    'tersedia' => false,
-                    'total'    => 0,
-                    'list'     => [],
+                    'tersedia' => $eksperimenTotal > 0,
+                    'total'    => $eksperimenTotal,
+                    'list'     => $eksperimenList,
                 ],
+
+                // Hasil kuis (Berpikir Kausal) belum tersimpan ke database.
                 'kuis' => [
                     'tersedia'       => false,
                     'dikerjakan'     => 0,
