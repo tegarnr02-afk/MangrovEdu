@@ -237,6 +237,70 @@ const chainExplanations = {
     "Bakteri dan jamur menguraikan sisa organisme mati, bangkai, feses, dan serasah yang tidak termakan menjadi bahan yang lebih sederhana. Hasil penguraian tersebut membantu menyuburkan lingkungan mangrove sehingga siklus dapat berlangsung kembali.",
 };
 
+/* ================= BAGIAN 3.5: KOMPONEN HILANG (PREDIKSI DAMPAK) =================
+   Setelah rantai makanan diperiksa, siswa diminta memilih satu komponen hidup
+   untuk "dihilangkan" lalu memprediksi dampaknya. Feedback berbasis
+   keyword-matching (case-insensitive, bukan exact-match) — pola yang sama dengan
+   soal isian prediksi di PerubahanLingkungan.jsx. Serasah/Detritus bukan
+   organisme hidup, jadi dikecualikan dari pilihan. */
+const genericImpactKeywords = [
+  "berkurang", "terganggu", "menurun", "kehilangan makanan", "rantai terputus",
+  "populasi menurun", "populasi meningkat", "kehilangan sumber makanan", "habitat",
+  "mati", "punah", "keseimbangan", "runtuh", "terputus",
+];
+
+const removableConcepts = {
+  mangrove: {
+    id: "mangrove",
+    label: "Mangrove",
+    explanation:
+      "Jika Mangrove hilang, tidak ada lagi daun yang gugur menjadi serasah sehingga sumber energi utama ekosistem ikut hilang. Tanpa produsen, seluruh rantai makanan bisa runtuh karena semua organisme kehilangan sumber energi awalnya.",
+    keywords: {
+      full: ["sumber energi", "sumber serasah", "runtuh", "seluruh rantai", "rantai runtuh", "tidak ada produsen", "kehilangan sumber energi", "energi awal"],
+      partial: ["serasah", "daun", "energi", "produsen", "fotosintesis"],
+    },
+  },
+  "kepiting-detritus": {
+    id: "kepiting-detritus",
+    label: "Kepiting Pemakan Detritus",
+    explanation:
+      "Jika Kepiting pemakan detritus hilang, serasah dan detritus tidak diuraikan lebih lanjut sehingga menumpuk. Ikan Kerapu kehilangan sumber makanan utamanya sehingga populasinya dapat menurun.",
+    keywords: {
+      full: ["kehilangan sumber makanan", "kehilangan makanan", "detritus menumpuk", "menumpuk", "sumber makanan", "ikan kerapu", "populasi menurun", "tidak terurai", "tidak diuraikan"],
+      partial: ["detritus", "makanan", "serasah", "terurai"],
+    },
+  },
+  "ikan-kerapu": {
+    id: "ikan-kerapu",
+    label: "Ikan Kerapu",
+    explanation:
+      "Jika Ikan Kerapu hilang, tidak ada lagi pemangsa bagi kepiting sehingga populasi kepiting dapat meningkat. Keseimbangan rantai makanan menjadi terganggu karena jumlah konsumen di bawahnya tidak terkendali.",
+    keywords: {
+      full: ["tidak ada pemangsa", "populasi meningkat", "kepiting meningkat", "meningkat", "tidak terkendali", "keseimbangan rantai", "pemangsa hilang"],
+      partial: ["kepiting", "pemangsa", "keseimbangan"],
+    },
+  },
+  pengurai: {
+    id: "pengurai",
+    label: "Bakteri & Jamur",
+    explanation:
+      "Jika Bakteri dan Jamur (pengurai) hilang, sisa organisme mati tidak dapat terurai sehingga nutrisi tidak kembali ke tanah dan mangrove. Akibatnya kesuburan tanah menurun dan siklus ekosistem terhenti.",
+    keywords: {
+      full: ["tidak terurai", "tidak dapat terurai", "nutrisi tidak kembali", "kesuburan", "kesuburan menurun", "sisa organisme", "siklus terhenti", "tidak diuraikan"],
+      partial: ["terurai", "nutrisi", "pengurai", "bakteri", "jamur", "organisme mati"],
+    },
+  },
+};
+
+/* Keyword classifier 3 tingkat: sesuai / sebagian / belum (case-insensitive). */
+function classifyRemoval(text, cfg) {
+  const t = (text || "").toLowerCase().trim();
+  if (!t) return null;
+  if (cfg.keywords.full.some((k) => t.includes(k))) return "sesuai";
+  if ([...genericImpactKeywords, ...cfg.keywords.partial].some((k) => t.includes(k))) return "sebagian";
+  return "belum";
+}
+
 /* ================= BAGIAN 4: RINGKASAN ================= */
 const ringkasanPoints = [
   "🌱 Mangrove merupakan produsen dan habitat berbagai organisme.",
@@ -271,6 +335,10 @@ export default function InteraksiEkosistem() {
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverSlot, setDragOverSlot] = useState(null);
 
+  /* ---- Bagian 3.5: prediksi "apa yang terjadi jika satu komponen hilang?" ---- */
+  const [removedComponentId, setRemovedComponentId] = useState(null);
+  const [removalPredictions, setRemovalPredictions] = useState({});
+
   /* ---- Bagian 4: ringkasan ---- */
   const [summaryReached, setSummaryReached] = useState(false);
   const summaryRef = useRef(null);
@@ -295,8 +363,10 @@ export default function InteraksiEkosistem() {
   /* Derived values needed by useEffect deps — must be declared BEFORE the effect */
   const stage1Done = visitedHotspots.size === hotspots.length;
   const stage2Done = visitedRelations.size === relations.length;
-  // Lanjut ke ringkasan begitu rantai makanan sudah diperiksa, tidak wajib benar.
+  // Lanjut ke Bagian 3.5 begitu rantai makanan sudah diperiksa, tidak wajib benar.
   const stage3Done = chainSubmitted;
+  // Bagian 3.5 selesai begitu minimal 1 prediksi "komponen hilang" sudah diperiksa.
+  const stage35Done = Object.keys(removalPredictions).length > 0;
 
   /* Ambil progres materi 2 milik user dari database saat halaman dibuka,
      supaya hotspot, jawaban relasi, dan rantai makanan yang pernah diisi
@@ -328,15 +398,31 @@ export default function InteraksiEkosistem() {
           setVisitedRelations(restoredVisited);
         }
 
+        const hasPrediction =
+          data.prediksi_hilang && typeof data.prediksi_hilang === "object" && Object.keys(data.prediksi_hilang).length > 0;
+
         if (data.rantai && Array.isArray(data.rantai.urutan) && data.rantai.urutan.length === 5) {
           setSlots(data.rantai.urutan);
           setPool(initialPoolOrder.filter((id) => !data.rantai.urutan.includes(id)));
           setChainSubmitted(true);
           setChainCorrect(!!data.rantai.is_correct);
           setShowChainSection(true);
-          // Materi sudah pernah dituntaskan sampai rantai makanan pada sesi sebelumnya,
-          // jadi checkpoint "mencapai Ringkasan" tidak perlu menunggu scroll ulang.
-          setSummaryReached(true);
+          // Checkpoint "mencapai Ringkasan" pada sesi sebelumnya hanya dianggap sudah
+          // tercapai kalau prediksi komponen-hilang juga sudah pernah dilakukan.
+          if (hasPrediction) setSummaryReached(true);
+        }
+
+        if (hasPrediction) {
+          const restoredPredictions = {};
+          Object.entries(data.prediksi_hilang).forEach(([compId, val]) => {
+            restoredPredictions[compId] = {
+              text: val.jawaban_isian || "",
+              kategori: val.kategori || null,
+              submitted: true,
+            };
+          });
+          setRemovalPredictions(restoredPredictions);
+          setRemovedComponentId(Object.keys(restoredPredictions)[0]);
         }
       } catch (err) {
         console.error("Gagal memuat progres materi 2:", err);
@@ -396,7 +482,7 @@ export default function InteraksiEkosistem() {
       cancelAnimationFrame(raf);
       io?.disconnect();
     };
-  }, [stage1Done, stage2Done, showChainSection, stage3Done]);
+  }, [stage1Done, stage2Done, showChainSection, stage3Done, stage35Done]);
 
   useEffect(() => {
     if (!summaryRef.current) return;
@@ -413,7 +499,7 @@ export default function InteraksiEkosistem() {
     );
     io.observe(summaryRef.current);
     return () => io.disconnect();
-  }, [chainCorrect]);
+  }, [chainCorrect, stage35Done]);
 
   /* ---- handlers: hotspot ---- */
   const activeHotspot = hotspots.find((h) => h.id === activeHotspotId) || null;
@@ -584,7 +670,54 @@ export default function InteraksiEkosistem() {
     setDraggingId(null);
   };
 
-  const progressPercent = (stage1Done ? 25 : 0) + (stage2Done ? 25 : 0) + (stage3Done ? 25 : 0) + (summaryReached ? 25 : 0);
+  /* ---- handlers: prediksi komponen hilang (Bagian 3.5) ---- */
+  const selectRemovableComponent = (id) => {
+    if (!removableConcepts[id]) return;
+    setRemovedComponentId(id);
+  };
+
+  const updateRemovalText = (text) => {
+    if (!removedComponentId) return;
+    setRemovalPredictions((prev) => ({
+      ...prev,
+      [removedComponentId]: { text, kategori: null, submitted: false },
+    }));
+  };
+
+  const submitRemovalPrediction = () => {
+    if (!removedComponentId) return;
+    const concept = removableConcepts[removedComponentId];
+    const cur = removalPredictions[removedComponentId] || { text: "" };
+    const text = (cur.text || "").trim();
+    if (!text) return;
+
+    const kategori = classifyRemoval(text, concept);
+    setRemovalPredictions((prev) => ({
+      ...prev,
+      [removedComponentId]: { text, kategori, submitted: true },
+    }));
+
+    const isCorrect = kategori === "sesuai";
+    const nilai = kategori === "sesuai" ? 100 : kategori === "sebagian" ? 50 : 0;
+    api
+      .post("/materi2/jawaban", {
+        item_type: "prediksi-hilang",
+        item_id: removedComponentId,
+        is_correct: isCorrect,
+        nilai,
+        detail: { jawaban_isian: text, kategori },
+      })
+      .catch((err) => console.error("Gagal menyimpan prediksi komponen hilang:", err));
+  };
+
+  const selectedRemovalConcept = removedComponentId ? removableConcepts[removedComponentId] : null;
+
+  const progressPercent =
+    (stage1Done ? 20 : 0) +
+    (stage2Done ? 20 : 0) +
+    (stage3Done ? 20 : 0) +
+    (stage35Done ? 20 : 0) +
+    (summaryReached ? 20 : 0);
 
   /* ── tandai Materi 2 selesai ──
      Sama seperti Materi 1: manggil POST /materi/{slug}/complete (MateriProgressController)
@@ -852,6 +985,52 @@ export default function InteraksiEkosistem() {
         .chain-explain-item .role{ font-family:'Space Mono', monospace; font-size:0.62rem; font-weight:700; text-transform:uppercase; color:var(--estuary); letter-spacing:0.05em; display:block; margin-bottom:3px; }
         .chain-explain-item h5{ font-family:'Fraunces', serif; font-size:0.98rem; color:var(--canopy); margin-bottom:5px; }
         .chain-explain-item p{ font-size:0.86rem; color:#4C5F58; line-height:1.55; }
+
+        /* ===== Bagian 3.5: prediksi komponen hilang ===== */
+        .removal-chain{ display:flex; flex-wrap:wrap; align-items:stretch; gap:6px; margin-bottom:10px; }
+        .removal-card{
+          flex:1 1 140px; min-width:130px; background:var(--paper); border-radius:16px; padding:16px 12px;
+          text-align:center; border:2px solid rgba(15,36,29,0.1); cursor:default; position:relative;
+          box-shadow:0 4px 14px -10px rgba(15,36,29,0.15);
+          transition:border-color .2s ease, transform .2s ease, opacity .2s ease;
+        }
+        .removal-card.selectable{ cursor:pointer; }
+        .removal-card.selectable:hover{ transform:translateY(-3px); border-color:var(--estuary); }
+        .removal-card.not-removable{ opacity:0.72; }
+        .removal-card .emoji{ font-size:1.7rem; display:block; margin-bottom:6px; }
+        .removal-card .label{ display:block; font-size:0.78rem; font-weight:700; color:var(--canopy); line-height:1.3; }
+        .removal-card.selected{ border-color:var(--amber); box-shadow:0 0 0 5px rgba(232,163,61,0.2); }
+        .removal-card.removed{ opacity:0.42; border-style:dashed; }
+        .removal-card.removed .emoji{ filter:grayscale(1); }
+        .removal-card.removed .label{ text-decoration:line-through; }
+        .removal-card .removed-x{
+          position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+          font-size:2.4rem; font-weight:800; color:var(--danger); display:none; line-height:1;
+        }
+        .removal-card.removed .removed-x{ display:block; }
+        .removal-card.attempted .done-badge{
+          position:absolute; top:-8px; right:-8px; width:22px; height:22px; border-radius:50%;
+          background:var(--estuary); color:var(--paper); display:flex; align-items:center; justify-content:center;
+          box-shadow:0 2px 6px -2px rgba(15,36,29,0.4);
+        }
+        .removal-card.attempted .done-badge svg{ width:12px; height:12px; }
+        .removal-arrow{ display:none; }
+        @media (min-width:860px){
+          .removal-arrow{ display:flex; align-items:center; color:var(--silt); flex:0 0 auto; padding-top:24px; }
+          .removal-arrow svg{ width:18px; height:18px; }
+        }
+        .predict-input{
+          width:100%; border-radius:14px; border:1.5px solid rgba(15,36,29,0.14); background:var(--sand);
+          padding:16px 18px; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.92rem; resize:vertical; color:var(--ink);
+        }
+        .predict-input:focus{ outline:none; border-color:var(--estuary); }
+        .quiz-feedback.partial{ background:#FBF0DA; color:#7A4E10; }
+        .removal-concept{
+          margin-top:16px; background:var(--tide-pale); border-radius:16px; padding:20px 22px;
+          border-left:4px solid var(--estuary);
+        }
+        .removal-concept h5{ font-family:'Fraunces', serif; font-size:1rem; color:var(--canopy); margin-bottom:8px; }
+        .removal-concept p{ font-size:0.88rem; color:#33524A; line-height:1.6; }
 
         /* ===== Bagian 4: ringkasan ===== */
         .summary-card{
@@ -1196,8 +1375,140 @@ export default function InteraksiEkosistem() {
         </section>
       )}
 
-      {/* ================= BAGIAN 4: RINGKASAN ================= */}
+      {/* ================= BAGIAN 3.5: APA YANG TERJADI JIKA SATU KOMPONEN HILANG? ================= */}
       {stage3Done && (
+        <section className="section" style={{ background: "var(--sand-deep)" }}>
+          <div className="container">
+            <div className="section-head reveal">
+              <span className="eyebrow">🔮 Bagian 3.5 — Prediksi</span>
+              <h2>Apa yang Terjadi Jika Satu Komponen Hilang?</h2>
+              <p>
+                Semua komponen rantai makanan saling terhubung. Pilih salah satu komponen hidup
+                untuk "dihilangkan", lalu prediksikan apa dampaknya terhadap organisme atau
+                hubungan lainnya dalam rantai makanan.
+              </p>
+            </div>
+
+            <div className="reveal">
+              <p style={{ fontSize: "0.88rem", color: "#556961", marginBottom: 14 }}>
+                Klik kartu untuk memilih komponen yang ingin kamu hilangkan:
+              </p>
+              <div className="removal-chain">
+                {correctOrder.map((id, i) => {
+                  const c = cardById(id);
+                  const removable = removableConcepts[id] != null;
+                  const isSelected = removedComponentId === id;
+                  const attempted = removalPredictions[id] && removalPredictions[id].submitted;
+                  return (
+                    <React.Fragment key={id}>
+                      <div
+                        className={`removal-card${removable ? " selectable" : " not-removable"}${isSelected ? " selected removed" : ""}${attempted ? " attempted" : ""}`}
+                        onClick={() => selectRemovableComponent(id)}
+                        title={removable ? "Klik untuk menghilangkan komponen ini" : "Serasah bukan organisme hidup"}
+                      >
+                        <span className="emoji">{c.emoji}</span>
+                        <span className="label">{c.label}</span>
+                        <span className="removed-x">✕</span>
+                        {attempted && <span className="done-badge"><CheckIcon /></span>}
+                      </div>
+                      {i < correctOrder.length - 1 && (
+                        <span className="removal-arrow"><ArrowIcon /></span>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: "0.8rem", color: "#8A9A93" }}>
+                💡 Serasah/Detritus bukan organisme hidup, jadi tidak ikut dipilih.
+              </p>
+            </div>
+
+            {selectedRemovalConcept ? (
+              <div className="quiz-box reveal" style={{ marginTop: 20 }}>
+                <span className="eyebrow">Prediksi Dampak</span>
+                <h3>
+                  Jika <strong>{selectedRemovalConcept.label}</strong> hilang dari rantai makanan
+                  ini, menurutmu organisme atau hubungan apa yang mungkin terdampak? Jelaskan alasanmu.
+                </h3>
+                <textarea
+                  className="predict-input"
+                  rows={4}
+                  placeholder="Tulis prediksimu di sini..."
+                  value={(removalPredictions[removedComponentId]?.text) || ""}
+                  onChange={(e) => updateRemovalText(e.target.value)}
+                />
+                {!removalPredictions[removedComponentId]?.submitted ? (
+                  <button
+                    className="btn btn-primary"
+                    disabled={!(removalPredictions[removedComponentId]?.text || "").trim()}
+                    onClick={submitRemovalPrediction}
+                    style={{ marginTop: 12 }}
+                  >
+                    Periksa Prediksi <ArrowIcon />
+                  </button>
+                ) : (
+                  <>
+                    <div
+                      className={`quiz-feedback ${
+                        removalPredictions[removedComponentId].kategori === "sesuai"
+                          ? "correct"
+                          : removalPredictions[removedComponentId].kategori === "sebagian"
+                            ? "partial"
+                            : "wrong"
+                      }`}
+                    >
+                      {removalPredictions[removedComponentId].kategori === "sesuai" ? (
+                        <CheckIcon />
+                      ) : removalPredictions[removedComponentId].kategori === "sebagian" ? (
+                        <span style={{ fontSize: "1.1rem" }}>💡</span>
+                      ) : (
+                        <span style={{ fontSize: "1.1rem" }}>🔎</span>
+                      )}
+                      <span>
+                        {removalPredictions[removedComponentId].kategori === "sesuai"
+                          ? "Prediksimu sesuai! Kamu memahami dampak hilangnya komponen ini terhadap rantai makanan."
+                          : removalPredictions[removedComponentId].kategori === "sebagian"
+                            ? "Prediksimu sebagian sesuai. Kamu sudah mengarah ke dampak yang benar — lihat penjelasan di bawah untuk melengkapinya."
+                            : "Belum sesuai. Coba pikirkan kembali — setiap organisme saling terhubung. Siapa yang kehilangan makanan, dan siapa yang tak lagi dimangsa?"}
+                      </span>
+                    </div>
+                    <div className="removal-concept">
+                      <h5>💡 Penjelasan Konsep</h5>
+                      <p>{selectedRemovalConcept.explanation}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="quiz-box reveal" style={{ marginTop: 20, color: "#7A8A83" }}>
+                <span className="eyebrow">Prediksi Dampak</span>
+                <p style={{ fontSize: "0.92rem" }}>
+                  Pilih salah satu kartu komponen di atas untuk mulai membuat prediksi. Kamu bisa
+                  mencoba lebih dari satu komponen.
+                </p>
+              </div>
+            )}
+
+            {stage35Done && (
+              <div className="chain-cta-wrap reveal">
+                <p>
+                  Kamu sudah membuat {Object.keys(removalPredictions).length} prediksi. Kamu bisa
+                  mencoba komponen lain, atau lanjut ke ringkasan.
+                </p>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => summaryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                >
+                  Lanjut ke Ringkasan <ArrowIcon />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ================= BAGIAN 4: RINGKASAN ================= */}
+      {stage3Done && stage35Done && (
         <section className="section" style={{ background: "var(--sand-deep)" }} ref={summaryRef}>
           <div className="container">
             <div className="summary-card reveal">
@@ -1265,8 +1576,9 @@ export default function InteraksiEkosistem() {
             <h3>Selesaikan Materi 2 Dulu</h3>
             <p>
               Jelajahi ketujuh komponen ekosistem, jawab semua pertanyaan pada Eksplorasi Hubungan,
-              dan susun Rantai Makanan terlebih dahulu — lalu klik tombol "Selesai Materi 2" di
-              bagian ringkasan sebelum melanjutkan ke Materi 3: Perubahan Lingkungan.
+              susun Rantai Makanan, lalu buat prediksi pada aktivitas "Apa yang Terjadi Jika Satu
+              Komponen Hilang?" — kemudian klik tombol "Selesai Materi 2" di bagian ringkasan
+              sebelum melanjutkan ke Materi 3: Perubahan Lingkungan.
             </p>
             <button className="btn btn-primary" onClick={() => setShowLockWarning(false)}>
               Mengerti

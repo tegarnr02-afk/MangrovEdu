@@ -8,7 +8,8 @@ import imgSebelumPenebangan from "./mangrove-sebelum-penebangan.png";
 import imgSesudahPenebangan from "./mangrove-sesudah-penebangan.png";
 import imgSebelumPencemaran from "./mangrove-sebelum-pencemaran.png";
 import imgSesudahPencemaran from "./mangrove-sesudah-pencemaran.png";
-import imgPenambangan from "./mangrove-penambangan.png";
+import imgSebelumPembangunan from "./mangrove-sebelum-pembangunan.png";
+import imgSesudahPembangunan from "./mangrove-sesudah-pembangunan.png";
 
 /* ================= ICONS ================= */
 const ArrowIcon = () => (
@@ -155,27 +156,6 @@ const SceneAfter_Pencemaran = () => (
     <circle cx="200" cy="118" r="6" fill="#e74c3c" opacity="0.7" />
     <path d="M220 115 q10-8 20 0" stroke="#6b4" strokeWidth="2" fill="none" opacity="0.6" />
     <text x="160" y="170" textAnchor="middle" fill="#c00" fontSize="9" fontFamily="sans-serif" opacity="0.85">Pencemaran sampah 🗑️</text>
-  </svg>
-);
-const ScenePenambangan = () => (
-  <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%", borderRadius: 14 }}>
-    <defs>
-      <linearGradient id="sky4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#b8c8d0" /><stop offset="100%" stopColor="#d8e8f0" /></linearGradient>
-    </defs>
-    <rect width="320" height="180" fill="url(#sky4)" />
-    <rect x="0" y="115" width="320" height="65" fill="#5a8898" />
-    <rect x="190" y="60" width="80" height="70" rx="4" fill="#778" opacity="0.85" />
-    <rect x="195" y="65" width="70" height="20" rx="2" fill="#aab" opacity="0.8" />
-    <rect x="210" y="60" width="6" height="30" fill="#556" />
-    <rect x="225" y="50" width="30" height="6" rx="2" fill="#889" />
-    <line x1="225" y1="53" x2="225" y2="85" stroke="#aaa" strokeWidth="2" />
-    {[20, 60, 110].map((x, i) => (
-      <g key={i} transform={`translate(${x},${105 - (i % 2) * 8})`}>
-        <rect x="-3" y="0" width="6" height="18" rx="3" fill="#5C3D1E" />
-        <ellipse cx="0" cy="-2" rx="10" ry="13" fill={i === 1 ? "#c2573a" : "#4a7855"} opacity="0.8" />
-      </g>
-    ))}
-    <text x="160" y="170" textAnchor="middle" fill="#445" fontSize="9" fontFamily="sans-serif" opacity="0.85">Aktivitas penambangan ⛏️</text>
   </svg>
 );
 
@@ -406,36 +386,46 @@ const FENOMENA = {
     ],
     summary: ["Kondisi lingkungan berubah", "Mangrove dapat terganggu", "Organisme dapat terdampak", "Kondisi ekosistem berubah"],
   },
-  penambangan: {
-    id: "penambangan",
+  pembangunan: {
+    id: "pembangunan",
     order: 3,
-    label: "Aktivitas Penambangan",
-    emoji: "⛏️",
+    label: "Pembangunan Pesisir",
+    emoji: "🏗️",
     accent: "#6C63B5",
     accentBg: "#EAE8F6",
-    cardDesc: "Penambangan pasir dan mineral di laut tanpa memperhatikan kelestarian lingkungan merusak habitat mangrove dan mengganggu rantai kehidupan pesisir.",
-    intro: "Amati kondisi lingkungan mangrove yang mengalami kerusakan akibat aktivitas penambangan di laut.",
-    illustration: { src: imgPenambangan, alt: "Aktivitas penambangan di laut", IllusComp: (props) => <IllusImg src={imgPenambangan} alt="Aktivitas penambangan di laut" onZoom={props?.onZoom} maxHeight={360} />, desc: "Aktivitas penambangan di sekitar wilayah pesisir mengubah kondisi lingkungan mangrove dan mengganggu organisme yang bergantung padanya." },
+    cardDesc: "Pembangunan tambak, resort, dermaga, dan reklamasi di kawasan pesisir mengubah lahan mangrove menjadi lahan terbangun sehingga habitat mangrove ikut terdampak.",
+    intro: "Bandingkan kondisi lingkungan mangrove sebelum dan sesudah adanya pembangunan di kawasan pesisir.",
+    before: { label: "Kondisi Sebelum", src: imgSebelumPembangunan, alt: "Kawasan mangrove sebelum pembangunan pesisir", IllusComp: (props) => <IllusImg src={imgSebelumPembangunan} alt="Kawasan mangrove sebelum pembangunan pesisir" onZoom={props?.onZoom} />, desc: "Kawasan pesisir masih didominasi mangrove yang lebat dengan kondisi lingkungan yang alami." },
+    after: { label: "Kondisi Setelah", src: imgSesudahPembangunan, alt: "Kawasan mangrove sesudah pembangunan pesisir", IllusComp: (props) => <IllusImg src={imgSesudahPembangunan} alt="Kawasan mangrove sesudah pembangunan pesisir" onZoom={props?.onZoom} />, desc: "Sebagian lahan mangrove berubah menjadi tambak, resort, dermaga, atau area reklamasi." },
+    quiz: {
+      question: "Apa perubahan yang kamu lihat pada lingkungan mangrove tersebut?",
+      options: ["Jumlah mangrove berkurang.", "Jumlah mangrove bertambah.", "Tidak terjadi perubahan."],
+      correct: 0,
+      feedbackCorrect: "Benar! Jumlah mangrove pada gambar terlihat berkurang. Coba pikirkan, apa yang mungkin terjadi pada lingkungan dan organisme di sekitarnya jika kondisi ini terus berlangsung?",
+      feedbackWrong: [
+        "Belum tepat. Coba amati kembali kedua kondisi pada gambar. Apakah jumlah mangrove terlihat bertambah atau justru berkurang?",
+        "Belum tepat. Perhatikan kembali perbedaan kondisi mangrove pada kedua gambar. Adakah perubahan pada jumlah pohonnya?",
+      ],
+    },
     predict: {
-      question: "Perhatikan kondisi lingkungan pada gambar. Menurutmu, apa yang mungkin terjadi pada ekosistem mangrove jika aktivitas penambangan terus berlangsung?",
-      placeholder: "Tulis prediksimu...",
-      full: ["terganggu", "berkurang", "menurun", "mati", "sulit hidup", "sulit bertahan hidup", "habitat terganggu", "habitat berkurang", "kehilangan habitat", "populasi menurun"],
-      partial: ["rusak", "hilang", "kerusakan"],
-      feedbackCorrect: "Prediksimu menunjukkan adanya hubungan sebab-akibat. Aktivitas penambangan dapat menyebabkan perubahan pada kondisi mangrove dan selanjutnya berdampak pada organisme yang bergantung pada ekosistem tersebut.",
-      feedbackPartial: "Prediksimu sudah mengarah ke masalah yang tepat. Coba pikirkan lebih lanjut, bagian ekosistem apa saja yang bisa ikut terdampak?",
-      feedbackWrong: "Prediksimu belum menunjukkan seluruh hubungan yang mungkin terjadi. Coba perhatikan kembali kondisi mangrove pada gambar. Jika mangrove mengalami kerusakan, komponen ekosistem apa yang mungkin ikut terdampak?",
+      question: "Menurutmu, apa yang mungkin terjadi pada ekosistem mangrove jika pembangunan pesisir terus berlangsung tanpa memperhatikan kelestarian lingkungan?",
+      placeholder: "Tulis prediksimu di sini...",
+      full: ["terganggu", "berkurang", "menurun", "mati", "sulit hidup", "habitat hilang", "habitat berkurang", "habitat terganggu", "kehilangan habitat", "hilang tempat tinggal", "rusak", "populasi menurun"],
+      partial: ["pembangunan", "reklamasi", "ditebang", "diuruk", "berubah", "abrasi", "intrusi", "tambak", "resort", "dermaga", "lahan"],
+      feedbackCorrect: "Prediksimu menunjukkan hubungan sebab-akibat yang tepat. Pembangunan pesisir dapat mengurangi dan merusak habitat mangrove, sehingga organisme yang bergantung pada ekosistem tersebut ikut terdampak.",
+      feedbackPartial: "Prediksimu sudah mengarah ke masalah yang tepat. Coba pikirkan lebih lanjut, bagian ekosistem apa saja yang bisa ikut terdampak akibat pembangunan pesisir?",
+      feedbackWrong: "Prediksimu belum menunjukkan seluruh hubungan yang mungkin terjadi. Coba perhatikan kembali perubahan kondisi mangrove pada gambar. Jika habitat mangrove berkurang, komponen ekosistem apa yang mungkin ikut terdampak?",
     },
     chain: [
-      { emoji: "⛏️", title: "Aktivitas Penambangan di Laut", desc: "Aktivitas penambangan di laut yang tidak memperhatikan kelestarian lingkungan dapat mengubah kondisi lingkungan di sekitar wilayah pesisir dan mangrove." },
-      { emoji: "🌱", title: "Mangrove Mengalami Kerusakan/Kematian", desc: "Aktivitas penambangan di sekitar wilayah pesisir dapat berdampak pada kerusakan hingga kematian mangrove. Kondisi ini dapat mengubah lingkungan tempat berbagai organisme hidup." },
-      { emoji: "🌊", title: "Kondisi Ekosistem Berubah", desc: "Ketika mangrove mengalami kerusakan atau kematian, kondisi ekosistem di sekitarnya ikut berubah. Perubahan tersebut dapat memengaruhi organisme yang memanfaatkan kawasan mangrove." },
-      { emoji: "🦀", title: "Area Hidup/Perburuan Kepiting Berkurang", desc: "Kerusakan mangrove dapat menyebabkan berkurangnya area yang dapat digunakan kepiting laut untuk hidup dan mencari makan." },
-      { emoji: "🦀", title: "Populasi Kepiting Laut Menurun", desc: "Jika area hidup dan perburuan kepiting berkurang, keberadaan kepiting laut dapat ikut terdampak sehingga populasinya mengalami penurunan." },
+      { emoji: "🏗️", title: "Pembangunan Pesisir", desc: "Pembangunan tambak, resort, dermaga, atau reklamasi mengubah sebagian lahan mangrove menjadi lahan terbangun sehingga kondisi lingkungan di kawasan pesisir berubah." },
+      { emoji: "🌱", title: "Mangrove Berkurang/Rusak", desc: "Perubahan kondisi lingkungan menyebabkan habitat mangrove berkurang atau rusak, sehingga tempat hidup berbagai organisme ikut berubah." },
+      { emoji: "🦀", title: "Organisme Terdampak", desc: "Organisme yang bergantung pada mangrove kehilangan tempat hidup, tempat mencari makan, dan tempat berkembang biak." },
+      { emoji: "🌿", title: "Keseimbangan Ekosistem Terganggu", desc: "Jika habitat mangrove terus berkurang, keseimbangan ekosistem pesisir dapat terganggu dan berdampak pada kehidupan di sekitarnya." },
     ],
-    summary: ["Mangrove dapat mengalami kerusakan/kematian", "Kondisi ekosistem berubah", "Area hidup kepiting berkurang", "Populasi kepiting laut dapat menurun"],
+    summary: ["Habitat mangrove berkurang/rusak", "Kondisi ekosistem berubah", "Organisme kehilangan tempat hidup", "Keseimbangan ekosistem pesisir terganggu"],
   },
 };
-const FENOMENA_ORDER = ["penebangan", "pencemaran", "penambangan"];
+const FENOMENA_ORDER = ["penebangan", "pencemaran", "pembangunan"];
 
 /* ============== Urutan benar aktivitas drag & drop (rantai penebangan) ============== */
 const CHAIN_ITEMS = FENOMENA.penebangan.chain.map((c, i) => ({ id: i, ...c }));
@@ -455,7 +445,7 @@ const STAGES = [
   { key: "pilih", label: "Pilih Fenomena" },
   { key: "penebangan", label: "Penebangan" },
   { key: "pencemaran", label: "Pencemaran" },
-  { key: "penambangan", label: "Penambangan" },
+  { key: "pembangunan", label: "Pembangunan Pesisir" },
   { key: "sebab-akibat", label: "Sebab-Akibat" },
   { key: "refleksi", label: "Refleksi" },
   { key: "selesai", label: "Selesai" },
@@ -468,7 +458,7 @@ export default function PerubahanLingkungan() {
   const [fState, setFState] = useState({
     penebangan: { mcqSelected: null, mcqSubmitted: false, mcqCorrect: false, followUpSelected: null, followUpSubmitted: false, followUpCorrect: false, openChain: null, done: false },
     pencemaran: { mcqSelected: null, mcqSubmitted: false, mcqCorrect: false, predictText: "", predictResult: null, openChain: null, done: false },
-    penambangan: { predictText: "", predictResult: null, openChain: null, done: false },
+    pembangunan: { mcqSelected: null, mcqSubmitted: false, mcqCorrect: false, predictText: "", predictResult: null, openChain: null, done: false },
   });
 
   const [dragPool, setDragPool] = useState(SHUFFLED_START);
@@ -1372,7 +1362,7 @@ export default function PerubahanLingkungan() {
         {/* ================= SECTION 3, 4, 6 — FENOMENA (halaman detail terpisah) ================= */}
         {stageIdx === 1 && renderFenomenaStage("penebangan")}
         {stageIdx === 2 && renderFenomenaStage("pencemaran")}
-        {stageIdx === 3 && renderFenomenaStage("penambangan")}
+        {stageIdx === 3 && renderFenomenaStage("pembangunan")}
 
         {/* ================= SECTION 8 — SEBAB-AKIBAT (DRAG & DROP) =================
              Menyatu di halaman yang sama dengan hub "Pilih Fenomena" (stageIdx===0),
@@ -1501,7 +1491,7 @@ export default function PerubahanLingkungan() {
                     <span>
                       {reflSelected === 0
                         ? "🎉 Benar! Ekosistem mangrove saling terhubung. Perubahan pada kondisi mangrove dapat memengaruhi habitat, organisme, dan kondisi ekosistem pesisir."
-                        : "Coba pikirkan kembali. Ingat bagaimana penebangan, pencemaran, dan penambangan sama-sama berujung pada dampak bagi organisme dan ekosistem."}
+                        : "Coba pikirkan kembali. Ingat bagaimana penebangan, pencemaran, dan pembangunan pesisir sama-sama berujung pada dampak bagi organisme dan ekosistem."}
                     </span>
                   </div>
                 )}

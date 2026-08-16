@@ -43,6 +43,16 @@ class Materi2JawabanController extends Controller
                     'nilai'      => $rows->firstWhere('item_type', 'rantai')?->nilai ?? 0,
                 ]
                 : null,
+
+            'prediksi_hilang' => $rows->where('item_type', 'prediksi-hilang')
+                ->mapWithKeys(fn ($r) => [
+                    $r->item_id => [
+                        'jawaban_isian' => $r->detail['jawaban_isian'] ?? null,
+                        'kategori'      => $r->detail['kategori'] ?? null,
+                        'is_correct'    => $r->is_correct,
+                        'nilai'         => $r->nilai,
+                    ],
+                ]),
         ]);
     }
 
@@ -53,6 +63,7 @@ class Materi2JawabanController extends Controller
      * - hotspot diklik (item_type=hotspot)
      * - jawaban relasi diperiksa (item_type=relasi)
      * - rantai makanan diperiksa (item_type=rantai)
+     * - prediksi komponen hilang diperiksa (item_type=prediksi-hilang)
      *
      * Catatan penting: endpoint ini SELALU menyimpan apa pun hasilnya
      * (benar maupun salah). Tidak ada logika "tolak jika salah", karena
@@ -62,7 +73,7 @@ class Materi2JawabanController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'item_type'  => ['required', 'in:hotspot,relasi,rantai'],
+            'item_type'  => ['required', 'in:hotspot,relasi,rantai,prediksi-hilang'],
             'item_id'    => ['required', 'string', 'max:50'],
             'is_correct' => ['sometimes', 'boolean'],
             'nilai'      => ['sometimes', 'integer', 'min:0', 'max:100'],
@@ -78,6 +89,15 @@ class Materi2JawabanController extends Controller
 
             if ($type === 'rantai' && empty($request->input('detail.urutan'))) {
                 $validator->errors()->add('detail.urutan', 'Urutan rantai makanan wajib diisi.');
+            }
+
+            if ($type === 'prediksi-hilang') {
+                if (empty($request->input('detail.jawaban_isian'))) {
+                    $validator->errors()->add('detail.jawaban_isian', 'Jawaban isian prediksi wajib diisi.');
+                }
+                if (!in_array($request->input('detail.kategori'), ['sesuai', 'sebagian', 'belum'], true)) {
+                    $validator->errors()->add('detail.kategori', 'Kategori prediksi tidak valid.');
+                }
             }
         });
 
