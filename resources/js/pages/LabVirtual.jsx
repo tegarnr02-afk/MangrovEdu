@@ -1,176 +1,100 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import heroBg from "./konservasi-mangrove-sehat.png";
+import backgroundImg from "./background.png";
+import mangroveImg from "./mangrove.png";
+import waveLowImg from "./wave-low.png";
+import waveMediumImg from "./wave-medium.png";
+import waveHighImg from "./wave-high.png";
 
-/* ================= UTIL =================
-   PRNG sederhana berbasis seed supaya posisi pohon stabil antar-render
-   (tidak "meloncat" random tiap kali komponen re-render). */
-function seededRandom(seed) {
-  let s = seed;
-  return () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
+/* ================= VISUAL ASSET =================
+   Seluruh visualisasi memakai PNG yang sudah tersedia:
+   - background.png            : latar area simulasi
+   - mangrove.png              : satu pohon (diulang dengan posisi berbeda)
+   - wave-low/medium/high.png  : ilustrasi gelombang, di-crossfade mengikuti
+                                  slider "Tinggi Gelombang" (bukan digambar
+                                  ulang secara prosedural) supaya teksturnya
+                                  tetap terlihat seperti ombak sungguhan.
+================================================================ */
+
+// Tinggi dasar satu pohon (persen dari tinggi container). Ukuran final =
+// TREE_BASE × scale, sehingga variasi skala 0.75–1.05 terasa natural tanpa
+// perbedaan ekstrem. Asset mangrove.png ber-aspek 2:3 (potret), jadi lebar
+// otomatis mengikuti tinggi (width:auto).
+const TREE_BASE = 26;
+
+// Posisi + skala + kemiringan untuk maksimal 10 pohon mangrove.
+// Ditentukan secara deterministik (bukan Math.random) supaya posisi stabil
+// saat React re-render. Akar disejajarkan dengan garis pantai (pasir) pada
+// background.png (~bottom 42–56%): baris belakang lebih kecil & sedikit lebih
+// tinggi; baris depan lebih besar & lebih jelas (memberi kesan kedalaman).
+const TREE_SLOTS = [
+  { left: 5,  bottom: 52, scale: 0.78, rotate: -2 },
+  { left: 14, bottom: 44, scale: 0.92, rotate: 1 },
+  { left: 23, bottom: 53, scale: 0.80, rotate: -1 },
+  { left: 32, bottom: 43, scale: 1.00, rotate: 2 },
+  { left: 41, bottom: 52, scale: 0.82, rotate: -2 },
+  { left: 50, bottom: 42, scale: 1.04, rotate: 1 },
+  { left: 59, bottom: 53, scale: 0.79, rotate: -1 },
+  { left: 68, bottom: 44, scale: 0.94, rotate: 2 },
+  { left: 77, bottom: 52, scale: 0.81, rotate: -2 },
+  { left: 86, bottom: 42, scale: 0.88, rotate: 1 },
+];
+
+// Jumlah pohon mengikuti kerapatan: 20% → 2, 40% → 4, …, 100% → 10.
+function treeCount(density) {
+  return Math.round(density / 10);
 }
 
-/* ================================================================
-   LAYER KANVAS: GELOMBANG AIR
-   ----------------------------------------------------------------
-   Digambar ulang tiap frame (bukan CSS statis) memakai kombinasi
-   beberapa gelombang sinus dengan fase berbeda. Amplitudo & kecepatan
-   mengikuti slider "tinggi gelombang".
-================================================================ */
-function WaveCanvas({ waveHeight }) {
-  const canvasRef = useRef(null);
-  const rafRef = useRef(null);
-  const tRef = useRef(0);
-  const waveHeightRef = useRef(waveHeight);
-  waveHeightRef.current = waveHeight;
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let width, height, dpr;
-
-    const resize = () => {
-      dpr = window.devicePixelRatio || 1;
-      width = canvas.clientWidth;
-      height = canvas.clientHeight;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    const drawWaveLayer = (baseY, amp, speed, freq, color, phase) => {
-      ctx.beginPath();
-      ctx.moveTo(0, height);
-      for (let x = 0; x <= width; x += 6) {
-        const y =
-          baseY +
-          Math.sin(x * freq + tRef.current * speed + phase) * amp +
-          Math.sin(x * freq * 2.3 + tRef.current * speed * 1.6 + phase) * (amp * 0.35);
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(width, height);
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-    };
-
-    const drawFoam = (baseY, amp, speed, freq, phase) => {
-      ctx.beginPath();
-      for (let x = 0; x <= width; x += 6) {
-        const y =
-          baseY +
-          Math.sin(x * freq + tRef.current * speed + phase) * amp +
-          Math.sin(x * freq * 2.3 + tRef.current * speed * 1.6 + phase) * (amp * 0.35);
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = "rgba(241,244,236,0.55)";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    };
-
-    const loop = () => {
-      ctx.clearRect(0, 0, width, height);
-      const wh = waveHeightRef.current / 100; // 0..1
-
-      // amplitudo & kecepatan naik seiring slider "tinggi gelombang"
-      const amp1 = 6 + wh * 26;
-      const amp2 = 4 + wh * 18;
-      const amp3 = 3 + wh * 12;
-      const speed = 0.018 + wh * 0.05;
-
-      const baseY = height * 0.34;
-
-      drawWaveLayer(baseY, amp1, speed * 0.8, 0.012, "rgba(137,174,158,0.55)", 0);
-      drawWaveLayer(baseY + height * 0.16, amp2, speed, 0.016, "rgba(61,110,82,0.7)", 1.4);
-      drawWaveLayer(baseY + height * 0.34, amp3, speed * 1.2, 0.02, "rgba(30,69,49,0.9)", 2.6);
-      drawFoam(baseY, amp1, speed * 0.8, 0.012, 0);
-
-      tRef.current += 1;
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    loop();
-
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="wave-canvas" />;
-}
-
-/* ================================================================
-   LAYER CSS: HUTAN MANGROVE
-   ----------------------------------------------------------------
-   Bukan satu bentuk SVG yang di-scale, tapi "populasi" pohon yang
-   jumlahnya benar-benar bertambah/berkurang mengikuti slider
-   kerapatan — dari kolam posisi acak yang stabil (seeded).
-================================================================ */
-const TREE_POOL_SIZE = 46;
-function generateTreePool() {
-  const rand = seededRandom(42);
-  const pool = [];
-  for (let i = 0; i < TREE_POOL_SIZE; i++) {
-    pool.push({
-      left: rand() * 96 + 2,
-      bottom: rand() * 28,
-      scale: 0.5 + rand() * 0.85,
-      hue: rand() > 0.5 ? "a" : "b",
-      sway: 3.5 + rand() * 2.5,
-      delay: rand() * -6,
-    });
+/* ================= WAVE CROSSFADE =================
+   Tiga ilustrasi (low/medium/high) ditumpuk pas di atas satu sama lain lalu
+   di-crossfade lewat opacity mengikuti slider "Tinggi Gelombang":
+   0–50%  → low  memudar ke medium
+   50–100 → medium memudar ke high
+   Hasilnya transisi mulus dari tenang ke ombak besar tanpa patahan, dan
+   teksturnya tetap ilustrasi asli (bukan bentuk geometris). */
+function waveCrossfade(wh) {
+  if (wh <= 0.5) {
+    const t = wh / 0.5;
+    return { low: 1 - t, medium: t, high: 0 };
   }
-  // urutkan dari "belakang/kecil" ke "depan/besar" supaya saat kerapatan
-  // ditambah, pohon baru yang muncul terasa alami.
-  return pool.sort((a, b) => a.bottom - b.bottom);
-}
-
-function MangroveForest({ density }) {
-  const pool = useMemo(generateTreePool, []);
-  const visibleCount = Math.round((density / 100) * pool.length);
-
-  return (
-    <div className="forest-layer">
-      {pool.slice(0, visibleCount).map((t, i) => (
-        <div
-          key={i}
-          className={`tree-blob tree-blob-${t.hue}`}
-          style={{
-            left: `${t.left}%`,
-            bottom: `${t.bottom}%`,
-            "--s": t.scale,
-            animationDuration: `${t.sway}s`,
-            animationDelay: `${t.delay}s`,
-          }}
-        >
-          <div className="tree-canopy" />
-          <div className="tree-trunk" />
-        </div>
-      ))}
-    </div>
-  );
+  const t = (wh - 0.5) / 0.5;
+  return { low: 0, medium: 1 - t, high: t };
 }
 
 /* ================================================================
    LOGIKA KATEGORI & HASIL PENGAMATAN
 ================================================================ */
-// 0–33% Rendah, 34–66% Sedang, 67–100% Tinggi (kedua slider sama).
+// Kategori umum untuk gelombang & skor abrasi (tidak ada standar baku resmi,
+// jadi tetap dibagi rata 3 bagian): 0–33% Rendah, 34–66% Sedang, 67–100% Tinggi.
 function kategori(v) {
   if (v <= 33) return "Rendah";
   if (v <= 66) return "Sedang";
   return "Tinggi";
 }
 
+// Kategori kerapatan mangrove mengikuti Tabel 1 "Standar baku kerusakan
+// hutan mangrove" (Rafdinal et al., berdasarkan Kepmen LH No. 201/2004):
+//   Kriteria Baik, Padat  : tutupan ≥ 75%   (kerapatan ≥ 1.500 ind/ha)
+//   Kriteria Baik, Sedang : tutupan 50–75%  (kerapatan 1.000–1.500 ind/ha)
+//   Kriteria Rusak, Jarang: tutupan < 50%   (kerapatan < 1.000 ind/ha)
+// Nilai slider "Kerapatan Mangrove" (0–100%) dipetakan langsung sebagai
+// persentase tutupan pada standar ini.
+function densityKategori(v) {
+  if (v < 50) return "Jarang";
+  if (v < 75) return "Sedang";
+  return "Padat";
+}
+
+// Kriteria kerusakan sesuai Tabel 1: Padat & Sedang = Baik, Jarang = Rusak.
+function densityKriteria(v) {
+  return densityKategori(v) === "Jarang" ? "Rusak" : "Baik";
+}
+
 function protectionLabel(density) {
-  const k = kategori(density);
-  if (k === "Tinggi") return "Kuat";
+  const k = densityKategori(density);
+  if (k === "Padat") return "Kuat";
   if (k === "Sedang") return "Cukup";
   return "Lemah";
 }
@@ -178,10 +102,10 @@ function protectionLabel(density) {
 // Deskripsi hasil pengamatan. Sengaja memakai bahasa yang tidak absolut:
 // "menunjukkan", "cenderung", "dapat", "lebih rentan".
 function computeObservation(density, waveHeight) {
-  const d = kategori(density);
+  const d = densityKategori(density);
   const w = kategori(waveHeight);
-  const dLow = d === "Rendah";
-  const dHigh = d === "Tinggi";
+  const dLow = d === "Jarang";
+  const dHigh = d === "Padat";
   const wLow = w === "Rendah";
   const wHigh = w === "Tinggi";
 
@@ -212,10 +136,20 @@ function computeObservation(density, waveHeight) {
   return "Vegetasi mangrove dengan kerapatan sedang dan gelombang sedang menunjukkan perlindungan pesisir yang cukup seimbang, namun dapat lebih rentan saat gelombang meningkat.";
 }
 
+// Peringkat level (0=rendah/jarang, 1=sedang, 2=tinggi/padat) supaya tone
+// bisa dipakai untuk dua sistem label sekaligus: Rendah/Sedang/Tinggi
+// (gelombang, abrasi) dan Jarang/Sedang/Padat (kerapatan mangrove).
+function levelRank(level) {
+  if (level === "Sedang") return 1;
+  if (level === "Tinggi" || level === "Padat") return 2;
+  return 0; // "Rendah" atau "Jarang"
+}
+
 // tone untuk pewarnaan indikator diagram & badge: good(green)/mid(amber)/bad(red)
 function toneOfLevel(level, goodWhenHigh) {
-  if (level === "Tinggi") return goodWhenHigh ? "good" : "bad";
-  if (level === "Sedang") return "mid";
+  const rank = levelRank(level);
+  if (rank === 2) return goodWhenHigh ? "good" : "bad";
+  if (rank === 1) return "mid";
   return goodWhenHigh ? "bad" : "good";
 }
 
@@ -255,7 +189,7 @@ export default function LabVirtual() {
   const DEFAULT_DENSITY = 60;
   const DEFAULT_WAVE = 40;
 
-  const densityK = kategori(density);
+  const densityK = densityKategori(density);
   const waveK = kategori(waveHeight);
   const protection = protectionLabel(density);
   const protectionTone = protection === "Kuat" ? "good" : protection === "Cukup" ? "mid" : "bad";
@@ -263,6 +197,25 @@ export default function LabVirtual() {
   const abrasionScore = Math.round(Math.max(0, Math.min(100, waveHeight - density * 0.5)));
   const abrasionK = kategori(abrasionScore);
   const observation = computeObservation(density, waveHeight);
+
+  const pohonCount = treeCount(density);
+
+  // "Tinggi Gelombang" mengatur dua hal: seberapa besar area panel yang
+  // ditutupi air (waveLayerHeight), dan crossfade antara tiga ilustrasi
+  // gelombang (low/medium/high) supaya teksturnya tetap terlihat seperti
+  // ombak sungguhan di semua posisi slider.
+  const wh = waveHeight / 100; // 0..1
+  const waveLayerHeight = 30 + wh * 20; // 30% (tenang) → 50% (kuat)
+  const waveMix = waveCrossfade(wh);
+  // Tiga salinan (belakang → tengah → depan), semuanya pakai kotak crop yang
+  // SAMA (cuma digeser lewat transform) supaya tidak ada potongan/sambungan
+  // yang kelihatan — hasilnya air terasa penuh & berlapis sampai ke dasar
+  // panel, bukan cuma satu garis wave yang mengambang di tengah.
+  const waveDepths = [
+    { className: "wave-copy-back", opacityScale: 0.55 },
+    { className: "wave-copy-mid", opacityScale: 0.8 },
+    { className: "wave-copy-front", opacityScale: 1 },
+  ];
 
   const handleReset = () => {
     setDensity(DEFAULT_DENSITY);
@@ -375,12 +328,12 @@ export default function LabVirtual() {
         /* ===== Visualisasi ===== */
         .viz-panel{
           position:relative; border-radius:var(--radius-lg); overflow:hidden;
-          height:470px; background:linear-gradient(180deg,#B7E0E6 0%,#D8EEEA 20%,#8FC2B4 49%,#4E9277 100%);
+          height:470px; background:var(--tide-pale);
           box-shadow:var(--shadow); border:1px solid rgba(15,36,29,0.06);
         }
-        .viz-sun{ position:absolute; top:24px; right:34px; width:52px; height:52px; border-radius:50%; background:#F6D186; box-shadow:0 0 40px 10px rgba(246,209,134,0.55); }
+        .viz-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
         .viz-readout{
-          position:absolute; top:16px; left:16px; z-index:6;
+          position:absolute; top:16px; left:16px; z-index:5;
           background:rgba(15,36,29,0.7); color:var(--paper); font-family:'Space Mono', monospace;
           font-size:0.72rem; padding:10px 14px; border-radius:12px; display:flex; flex-direction:column; gap:4px;
         }
@@ -389,41 +342,80 @@ export default function LabVirtual() {
         .viz-readout .protect.mid{ color:#F4C268; }
         .viz-readout .protect.bad{ color:#F29AAC; }
 
-        /* daratan di belakang mangrove (dengan rumah) */
-        .viz-land{
-          position:absolute; left:0; right:0; top:15%; height:28%; z-index:1;
-          background:linear-gradient(180deg,#8FB46C 0%,#6C9A5A 55%,#5C8A55 100%);
+        /* mangrove.png — pohon muncul satu per satu mengikuti kerapatan.
+           --rot dipakai di keyframe supaya kemiringan tetap setelah animasi selesai. */
+        .mangrove-layer{ position:absolute; inset:0; z-index:3; pointer-events:none; }
+        .mangrove-tree{
+          position:absolute; width:auto; transform-origin:bottom center;
+          animation:treeAppear 440ms ease both;
+          will-change:opacity, transform;
         }
-        .viz-houses{
-          position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:space-around;
-          padding:10px 10% 0; font-size:1.35rem; filter:drop-shadow(0 2px 2px rgba(15,36,29,0.2));
-        }
-        .viz-houses span{ transform:translateY(-4px); }
-
-        /* garis pantai (pasir) tempat mangrove berakar */
-        .viz-sand{
-          position:absolute; left:0; right:0; top:44%; height:5%; z-index:3;
-          background:linear-gradient(180deg,#E9DCB0 0%,#DCC98F 100%);
+        @keyframes treeAppear{
+          from{ opacity:0; transform:translateY(12px) scale(0.9) rotate(var(--rot, 0deg)); }
+          to{ opacity:1; transform:translateY(0) scale(1) rotate(var(--rot, 0deg)); }
         }
 
-        /* hutan mangrove */
-        .forest-layer{ position:absolute; left:0; right:0; bottom:56%; height:30%; z-index:2; }
-        .tree-blob{
-          position:absolute; width:64px; height:78px; transform-origin:50% 100%;
-          animation:treeSway ease-in-out infinite;
+        /* Wave PNG — sebelumnya tiap "baris" punya kotak crop berbeda (tinggi
+           beda-beda) sehingga object-fit:cover memotong ilustrasi di titik
+           berbeda dan terlihat ada sambungan/potongan horizontal. Sekarang
+           SEMUA salinan (.wave-copy) memakai kotak crop yang identik (extend
+           -8%..-10% di luar batas panel) — bedanya cuma digeser vertikal
+           lewat transform (bukan re-crop), jadi hasilnya tetap satu ilustrasi
+           utuh yang ditumpuk, tanpa potongan. Buffer bawah dibuat lebih besar
+           supaya air benar-benar rapat sampai dasar panel. Titik crop
+           (object-position) sengaja TIDAK persis di tepi bawah gambar — tepi
+           bawah asli ilustrasi wave-*.png sebagian besar transparan (jejak
+           riak/busa memudar), jadi kalau dipatok pas di tepi, area transparan
+           itu ikut ke-crop ke dasar kotak dan terlihat bolong/mengambang.
+           Anchor digeser ke ~82% supaya yang ter-crop adalah bagian "badan"
+           gelombang yang solid warnanya, bukan area kosongnya. */
+        .wave-layer{
+          position:absolute; left:0; right:0; bottom:0;
+          overflow:hidden; z-index:4; pointer-events:none;
+          transition:height .35s ease;
         }
-        @keyframes treeSway{ 0%,100%{ transform:rotate(-2deg) scale(var(--s,1)); } 50%{ transform:rotate(2deg) scale(var(--s,1)); } }
-        .tree-trunk{ position:absolute; left:50%; bottom:0; width:6px; height:24px; background:#4A3627; transform:translateX(-50%); border-radius:2px; }
-        .tree-canopy{
-          position:absolute; left:50%; bottom:16px; width:56px; height:50px; transform:translateX(-50%);
-          border-radius:58% 42% 55% 45% / 55% 48% 52% 45%;
-          box-shadow:inset -6px -8px 14px rgba(15,36,29,0.25), inset 6px 8px 12px rgba(255,255,255,0.12);
+        /* Lapisan warna air polos di paling belakang wave-layer — jaring
+           pengaman kalau tepi bawah PNG wave-*.png (yang memang transparan)
+           masih menyisakan celah walau sudah di-crop. Warnanya nge-blend ke
+           transparan di atas supaya tidak terlihat sebagai garis tegas. */
+        .wave-fallback{
+          position:absolute; left:0; right:0; bottom:0; top:35%;
+          background:linear-gradient(to bottom, transparent 0%, rgba(45,130,150,0.55) 35%, rgba(18,88,125,0.92) 100%);
         }
-        .tree-blob-a .tree-canopy{ background:radial-gradient(circle at 32% 30%, #3D8267, #1E4531 78%); }
-        .tree-blob-b .tree-canopy{ background:radial-gradient(circle at 32% 30%, #4E9573, #2F6B57 78%); }
-
-        /* laut + gelombang */
-        .wave-canvas{ position:absolute; left:0; right:0; top:49%; bottom:0; width:100%; height:auto; display:block; z-index:4; }
+        /* Tiga salinan wave sekarang benar-benar "ditumpuk" (bukan cuma
+           sedikit bergeser) — baris belakang & tengah digeser cukup jauh ke
+           atas supaya beberapa gelombang terlihat sekaligus, dan baris depan
+           tetap menutupi dasar panel sepenuhnya. */
+        .wave-copy{ position:absolute; left:0; right:0; top:-10%; bottom:-16%; }
+        .wave-copy-back{ transform:translateY(-16%); }
+        .wave-copy-mid{ transform:translateY(-7%); }
+        .wave-copy-front{ transform:translateY(0); }
+        .wave-img{
+          position:absolute; left:50%; bottom:0; width:128%; height:100%;
+          object-fit:cover; object-position:center 82%;
+          transform:translateX(-50%);
+          transition:opacity .5s ease;
+          animation:waveFlow 10s ease-in-out infinite;
+          will-change:opacity, transform;
+        }
+        /* Tiap salinan & gambar diberi durasi/arah berbeda supaya airnya
+           terlihat "berjalan" mengalir — bukan cuma naik-turun di tempat.
+           Salinan depan mengalir lebih cepat (lebih dekat), salinan belakang
+           lebih lambat & berlawanan arah (efek parallax). */
+        .wave-copy-back .wave-img{ animation-name:waveFlowReverse; }
+        .wave-copy-front .wave-img{ animation-duration:6.5s; }
+        .wave-img.wave-medium{ animation-duration:9.5s; animation-delay:-3s; }
+        .wave-img.wave-high{ animation-duration:6.8s; animation-delay:-1.5s; }
+        @keyframes waveFlow{
+          0%{ transform:translateX(-55%) translateY(0); }
+          50%{ transform:translateX(-45%) translateY(-1.8%); }
+          100%{ transform:translateX(-55%) translateY(0); }
+        }
+        @keyframes waveFlowReverse{
+          0%{ transform:translateX(-45%) translateY(0); }
+          50%{ transform:translateX(-55%) translateY(-1.8%); }
+          100%{ transform:translateX(-45%) translateY(0); }
+        }
 
         /* ===== Panel kontrol ===== */
         .control-panel{ background:var(--paper); border-radius:var(--radius-lg); padding:30px 26px; box-shadow:var(--shadow); border:1px solid rgba(15,36,29,0.06); }
@@ -466,6 +458,7 @@ export default function LabVirtual() {
         .obs-card .obs-ic{ width:42px; height:42px; border-radius:12px; background:var(--tide-pale); display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
         .obs-card small{ display:block; font-size:0.72rem; color:#7A8A83; }
         .obs-card b{ font-family:'Fraunces', serif; font-size:1.3rem; color:var(--canopy); }
+        .obs-card .obs-sub{ margin-top:2px; color:#8A9A93; }
         .obs-card .obs-kondisi{ margin-left:auto; }
         .obs-desc{ font-size:0.95rem; color:#33473F; line-height:1.7; background:var(--tide-pale); border-radius:16px; padding:18px 20px; }
 
@@ -507,7 +500,6 @@ export default function LabVirtual() {
         @media (max-width:600px){
           .container{ padding:0 20px; }
           .viz-panel{ height:300px; }
-          .viz-houses{ font-size:1rem; }
         }
       `}</style>
 
@@ -544,7 +536,7 @@ export default function LabVirtual() {
                   style={{ "--fill": `${density}%` }}
                   onChange={(e) => setDensity(Number(e.target.value))}
                 />
-                <div className="slider-scale"><span>Rendah</span><span>Sedang</span><span>Tinggi</span></div>
+                <div className="slider-scale"><span>Jarang (&lt;50%)</span><span>Sedang</span><span>Padat (≥75%)</span></div>
               </div>
 
               <div className="slider-group">
@@ -579,19 +571,43 @@ export default function LabVirtual() {
                 <span>Gelombang: {waveHeight}%</span>
                 <span className={`protect ${protectionTone}`}>Perlindungan: {protection}</span>
               </div>
-              <div className="viz-sun" />
 
-              {/* daratan di belakang mangrove (🏠) */}
-              <div className="viz-land">
-                <div className="viz-houses">
-                  <span>🏠</span><span>🏡</span><span>🏠</span><span>🏡</span><span>🏠</span>
-                </div>
+              {/* background.png — latar area simulasi */}
+              <img src={backgroundImg} className="viz-bg" alt="" />
+
+              {/* mangrove.png — muncul satu per satu mengikuti kerapatan */}
+              <div className="mangrove-layer">
+                {TREE_SLOTS.slice(0, pohonCount).map((slot, i) => (
+                  <img
+                    key={i}
+                    src={mangroveImg}
+                    className="mangrove-tree"
+                    alt=""
+                    style={{
+                      left: `${slot.left}%`,
+                      bottom: `${slot.bottom}%`,
+                      height: `${(TREE_BASE * slot.scale).toFixed(1)}%`,
+                      "--rot": `${slot.rotate}deg`,
+                      animationDelay: `${i * 70}ms`,
+                    }}
+                  />
+                ))}
               </div>
 
-              {/* hutan mangrove + garis pantai + laut */}
-              <MangroveForest density={density} />
-              <div className="viz-sand" />
-              <WaveCanvas waveHeight={waveHeight} />
+              {/* Wave PNG — tiga salinan bertumpuk (kotak crop identik, cuma
+                  digeser transform) + tiga ilustrasi di-crossfade lewat
+                  opacity inline. Tinggi area mengikuti slider "Tinggi
+                  Gelombang". */}
+              <div className="wave-layer" style={{ height: `${waveLayerHeight}%` }}>
+                <div className="wave-fallback" />
+                {waveDepths.map((depth) => (
+                  <div key={depth.className} className={`wave-copy ${depth.className}`}>
+                    <img src={waveLowImg} className="wave-img wave-low" alt="" style={{ opacity: waveMix.low * depth.opacityScale }} />
+                    <img src={waveMediumImg} className="wave-img wave-medium" alt="" style={{ opacity: waveMix.medium * depth.opacityScale }} />
+                    <img src={waveHighImg} className="wave-img wave-high" alt="" style={{ opacity: waveMix.high * depth.opacityScale }} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -606,6 +622,7 @@ export default function LabVirtual() {
                 <div>
                   <small>Kerapatan Mangrove</small>
                   <b>{density}%</b>
+                  <small className="obs-sub">Kriteria: {densityKriteria(density)} (standar tutupan hutan mangrove)</small>
                 </div>
                 <span className={`kondisi-badge obs-kondisi ${toneOfLevel(densityK, true)}`}>{densityK}</span>
               </div>
