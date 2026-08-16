@@ -3,6 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import heroBg from "./konservasi-mangrove-sehat.png";
+import backgroundImg from "./background.png";
+import mangroveImg from "./mangrove.png";
+import waveLowImg from "./wave-low.png";
+import waveMediumImg from "./wave-medium.png";
+import waveHighImg from "./wave-high.png";
 
 /* ================= ICONS ================= */
 const ArrowIcon = () => (
@@ -62,10 +67,61 @@ const LockIcon = () => (
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 // Konsisten dengan Lab Virtual: 0–33 Rendah, 34–66 Sedang, 67–100 Tinggi.
+// Skala generik ini dipakai untuk Tinggi Gelombang (belum ada standar baku resmi).
 function kategori(v) {
   if (v <= 33) return "Rendah";
   if (v <= 66) return "Sedang";
   return "Tinggi";
+}
+
+// Kategori kerapatan mangrove mengikuti Tabel 1 "Standar baku kerusakan
+// hutan mangrove" (Rafdinal et al., berdasarkan Kepmen LH No. 201/2004):
+//   Kriteria Baik, Padat  : tutupan ≥ 75%  (kerapatan ≥ 1.500 ind/ha)
+//   Kriteria Baik, Sedang : tutupan 50–75% (kerapatan 1.000–1.500 ind/ha)
+//   Kriteria Rusak, Jarang: tutupan < 50%  (kerapatan < 1.000 ind/ha)
+// Nilai slider "Kerapatan Mangrove" (0–100%) dipetakan langsung sebagai
+// persentase tutupan pada standar ini — sama seperti Lab Virtual.
+function densityKategori(v) {
+  if (v < 50) return "Jarang";
+  if (v < 75) return "Sedang";
+  return "Padat";
+}
+function densityKriteria(v) {
+  return densityKategori(v) === "Jarang" ? "Rusak" : "Baik";
+}
+
+/* ================= VISUAL ASSET (sama seperti Lab Virtual) =================
+   background.png : latar area visualisasi
+   mangrove.png   : satu pohon (diulang dengan posisi berbeda)
+   wave-low/medium/high.png : ilustrasi gelombang, di-crossfade mengikuti
+                               slider "Tinggi Gelombang".
+================================================================ */
+const TREE_BASE = 26;
+
+const TREE_SLOTS = [
+  { left: 5,  bottom: 52, scale: 0.78, rotate: -2 },
+  { left: 14, bottom: 44, scale: 0.92, rotate: 1 },
+  { left: 23, bottom: 53, scale: 0.80, rotate: -1 },
+  { left: 32, bottom: 43, scale: 1.00, rotate: 2 },
+  { left: 41, bottom: 52, scale: 0.82, rotate: -2 },
+  { left: 50, bottom: 42, scale: 1.04, rotate: 1 },
+  { left: 59, bottom: 53, scale: 0.79, rotate: -1 },
+  { left: 68, bottom: 44, scale: 0.94, rotate: 2 },
+  { left: 77, bottom: 52, scale: 0.81, rotate: -2 },
+  { left: 86, bottom: 42, scale: 0.88, rotate: 1 },
+];
+
+function treeCount(density) {
+  return Math.round(density / 10);
+}
+
+function waveCrossfade(wh) {
+  if (wh <= 0.5) {
+    const t = wh / 0.5;
+    return { low: 1 - t, medium: t, high: 0 };
+  }
+  const t = (wh - 0.5) / 0.5;
+  return { low: 0, medium: 1 - t, high: t };
 }
 
 /**
@@ -73,7 +129,7 @@ function kategori(v) {
  * (kerapatan mangrove & tinggi gelombang). Tidak ada nilai acak.
  */
 function jalankanSimulasi(density, wave) {
-  const dLevel = kategori(density);
+  const dLevel = densityKategori(density);
   const wLevel = kategori(wave);
 
   // Semakin rapat mangrove semakin kuat peredaman; semakin tinggi gelombang
@@ -85,9 +141,9 @@ function jalankanSimulasi(density, wave) {
   const abrasiLevel = kategori(abrasiScore);
 
   const kondisi =
-    abrasiLevel === "Rendah" ? "Relatif Terlindungi"
-    : abrasiLevel === "Sedang" ? "Perlu Perhatian"
-    : "Rentan";
+    abrasiLevel === "Rendah" ? "Stabil"
+    : abrasiLevel === "Sedang" ? "Cukup Stabil"
+    : "Tidak Stabil";
   const kondisiEmoji =
     abrasiLevel === "Rendah" ? "🟢"
     : abrasiLevel === "Sedang" ? "🟡"
@@ -109,11 +165,11 @@ function jalankanSimulasi(density, wave) {
       : "Risiko abrasi cenderung lebih tinggi karena perlindungan vegetasi lebih rendah sementara gelombang lebih kuat.";
 
   const kondisiText =
-    kondisi === "Relatif Terlindungi"
-      ? "Kondisi pesisir relatif terlindungi dari hantaman gelombang."
-      : kondisi === "Perlu Perhatian"
-      ? "Kondisi pesisir masih perlu perhatian karena dampak gelombang belum sepenuhnya teredam."
-      : "Kondisi pesisir lebih rentan terhadap erosi dan abrasi.";
+    kondisi === "Stabil"
+      ? "Kondisi pesisir relatif stabil dan terlindungi dari hantaman gelombang."
+      : kondisi === "Cukup Stabil"
+      ? "Kondisi pesisir cukup stabil, namun dampak gelombang belum sepenuhnya teredam."
+      : "Kondisi pesisir tidak stabil dan lebih rentan terhadap erosi dan abrasi.";
 
   const interpretasi = `Ketika kerapatan mangrove lebih ${dLevel.toLowerCase()} dan tinggi gelombang ${wLevel.toLowerCase()}, vegetasi mangrove ${
     protectionLevel === "Tinggi"
@@ -158,7 +214,7 @@ function toneAbrasi(level) {
   return level === "Rendah" ? "good" : level === "Sedang" ? "mid" : "bad";
 }
 function toneKondisi(k) {
-  return k === "Relatif Terlindungi" ? "good" : k === "Perlu Perhatian" ? "mid" : "bad";
+  return k === "Stabil" ? "good" : k === "Cukup Stabil" ? "mid" : "bad";
 }
 
 /* ================= BACA NILAI TERAKHIR DARI LAB VIRTUAL ================= */
@@ -171,19 +227,6 @@ function readLabValue(field, fallback) {
     /* abaikan */
   }
   return fallback;
-}
-
-/* ================= GELOMBANG (path) ================= */
-function buildWavePath(offsetY, amp) {
-  const startX = -60;
-  const endX = 780;
-  const step = 180;
-  let d = `M${startX},${offsetY}`;
-  for (let x = startX; x < endX; x += step) {
-    d += ` C ${x + step * 0.33},${offsetY - amp} ${x + step * 0.66},${offsetY + amp} ${x + step},${offsetY}`;
-  }
-  d += ` L${endX},320 L${startX},320 Z`;
-  return d;
 }
 
 export default function Simulasi() {
@@ -271,10 +314,18 @@ export default function Simulasi() {
     });
   };
 
-  // Visualisasi: jumlah pohon mengikuti kerapatan, amplitudo mengikuti tinggi gelombang.
-  const totalPohon = 8;
-  const pohonTerlihat = Math.round((density / 100) * totalPohon);
-  const amplitudo = 6 + (wave / 100) * 24;
+  // Visualisasi: jumlah pohon mengikuti kerapatan, wave crossfade mengikuti
+  // tinggi gelombang — sama seperti Lab Virtual, dan tetap reaktif langsung
+  // saat slider digeser (tidak menunggu tombol "Jalankan Simulasi").
+  const pohonCount = treeCount(density);
+  const wh = wave / 100;
+  const waveLayerHeight = 30 + wh * 20;
+  const waveMix = waveCrossfade(wh);
+  const waveDepths = [
+    { className: "wave-copy-back", opacityScale: 0.55 },
+    { className: "wave-copy-mid", opacityScale: 0.8 },
+    { className: "wave-copy-front", opacityScale: 1 },
+  ];
 
   const chainNodes = result
     ? [
@@ -394,20 +445,67 @@ export default function Simulasi() {
 
         .lab-visual{
           position:relative; border-radius:var(--radius-lg); overflow:hidden;
-          background:linear-gradient(180deg,#CBE8F3 0%,#EAF6FB 34%,#F2E9D2 34%,#F2E9D2 50%,#7FB8D4 50%,#4C8DB0 100%);
+          background:var(--tide-pale);
           min-height:340px; box-shadow:0 16px 32px -20px rgba(15,36,29,0.3);
         }
-        .lab-visual svg{ position:absolute; inset:0; width:100%; height:100%; }
+        .viz-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
+
+        /* mangrove.png — pohon muncul satu per satu mengikuti kerapatan. */
+        .mangrove-layer{ position:absolute; inset:0; z-index:3; pointer-events:none; }
+        .mangrove-tree{
+          position:absolute; width:auto; transform-origin:bottom center;
+          animation:treeAppear 440ms ease both;
+          will-change:opacity, transform;
+        }
+        @keyframes treeAppear{
+          from{ opacity:0; transform:translateY(12px) scale(0.9) rotate(var(--rot, 0deg)); }
+          to{ opacity:1; transform:translateY(0) scale(1) rotate(var(--rot, 0deg)); }
+        }
+
+        /* wave-low/medium/high.png — tiga salinan bertumpuk + crossfade opacity
+           mengikuti slider "Tinggi Gelombang", sama seperti Lab Virtual. */
+        .wave-layer{
+          position:absolute; left:0; right:0; bottom:0;
+          overflow:hidden; z-index:4; pointer-events:none;
+          transition:height .35s ease;
+        }
+        .wave-fallback{
+          position:absolute; left:0; right:0; bottom:0; top:35%;
+          background:linear-gradient(to bottom, transparent 0%, rgba(45,130,150,0.55) 35%, rgba(18,88,125,0.92) 100%);
+        }
+        .wave-copy{ position:absolute; left:0; right:0; top:-10%; bottom:-16%; }
+        .wave-copy-back{ transform:translateY(-16%); }
+        .wave-copy-mid{ transform:translateY(-7%); }
+        .wave-copy-front{ transform:translateY(0); }
+        .wave-img{
+          position:absolute; left:50%; bottom:0; width:128%; height:100%;
+          object-fit:cover; object-position:center 82%;
+          transform:translateX(-50%);
+          transition:opacity .5s ease;
+          animation:waveFlow 10s ease-in-out infinite;
+          will-change:opacity, transform;
+        }
+        .wave-copy-back .wave-img{ animation-name:waveFlowReverse; }
+        .wave-copy-front .wave-img{ animation-duration:6.5s; }
+        .wave-img.wave-medium{ animation-duration:9.5s; animation-delay:-3s; }
+        .wave-img.wave-high{ animation-duration:6.8s; animation-delay:-1.5s; }
+        .lab-visual.running .wave-img{ animation-duration:3.2s; }
+        @keyframes waveFlow{
+          0%{ transform:translateX(-55%) translateY(0); }
+          50%{ transform:translateX(-45%) translateY(-1.8%); }
+          100%{ transform:translateX(-55%) translateY(0); }
+        }
+        @keyframes waveFlowReverse{
+          0%{ transform:translateX(-45%) translateY(0); }
+          50%{ transform:translateX(-55%) translateY(-1.8%); }
+          100%{ transform:translateX(-45%) translateY(0); }
+        }
+
         .lab-visual-caption{
-          position:absolute; bottom:14px; left:0; right:0; text-align:center;
+          position:absolute; bottom:14px; left:0; right:0; text-align:center; z-index:5;
           font-family:'Space Mono', monospace; font-size:0.72rem; color:rgba(255,255,255,0.9);
           text-shadow:0 1px 3px rgba(0,0,0,0.45);
         }
-        .tree-shape{ transition:opacity .4s ease; }
-        .wave-anim{ animation:waveDrift 4.2s ease-in-out infinite alternate; }
-        .wave-anim.wave-back{ animation-duration:5.6s; animation-delay:.6s; }
-        .lab-visual.running .wave-anim{ animation-duration:1.3s; }
-        @keyframes waveDrift{ from{ transform:translateX(0); } to{ transform:translateX(-24px); } }
 
         .visual-overlay{
           position:absolute; inset:0; display:flex; flex-direction:column; gap:14px;
@@ -565,7 +663,7 @@ export default function Simulasi() {
                   <div className="control-block">
                     <div className="control-label">
                       <span><LeafIcon /> Kerapatan Mangrove</span>
-                      <span className="control-tag">{kategori(density)}</span>
+                      <span className="control-tag">{densityKategori(density)}</span>
                     </div>
                     <input
                       type="range"
@@ -610,32 +708,42 @@ export default function Simulasi() {
                 </div>
 
                 <div className={`lab-visual reveal ${phase === "running" ? "running" : ""}`}>
-                  <svg viewBox="0 0 720 320" preserveAspectRatio="none" aria-hidden="true">
-                    {/* Daratan / garis pantai di belakang mangrove */}
-                    <rect x="0" y="140" width="720" height="70" fill="#E9E2C8" />
-                    {/* Mangrove — jumlah mengikuti kerapatan */}
-                    {Array.from({ length: totalPohon }).map((_, i) => {
-                      const x = 40 + i * ((720 - 80) / (totalPohon - 1));
-                      const visible = i < pohonTerlihat;
-                      return (
-                        <g key={i} className="tree-shape" style={{ opacity: visible ? 1 : 0.12 }}>
-                          <path d={`M${x - 3} 210 L${x - 3} 244 L${x + 3} 244 L${x + 3} 210 Z`} fill="#3B2A1E" />
-                          <ellipse cx={x} cy={185} rx="26" ry="30" fill="#2F6B57" />
-                          <ellipse cx={x - 10} cy={175} rx="16" ry="18" fill="#3D8267" />
-                          <ellipse cx={x + 12} cy={178} rx="16" ry="18" fill="#3D8267" />
-                        </g>
-                      );
-                    })}
-                    {/* Laut + gelombang (bergerak) */}
-                    <g className="wave-anim">
-                      <path d={buildWavePath(226, amplitudo)} fill="#2E6E8E" opacity="0.85" />
-                    </g>
-                    <g className="wave-anim wave-back">
-                      <path d={buildWavePath(244, amplitudo * 0.7)} fill="#1F5470" opacity="0.9" />
-                    </g>
-                  </svg>
+                  {/* background.png — latar area visualisasi */}
+                  <img src={backgroundImg} className="viz-bg" alt="" />
+
+                  {/* mangrove.png — muncul satu per satu mengikuti kerapatan, live saat slider digeser */}
+                  <div className="mangrove-layer">
+                    {TREE_SLOTS.slice(0, pohonCount).map((slot, i) => (
+                      <img
+                        key={i}
+                        src={mangroveImg}
+                        className="mangrove-tree"
+                        alt=""
+                        style={{
+                          left: `${slot.left}%`,
+                          bottom: `${slot.bottom}%`,
+                          height: `${(TREE_BASE * slot.scale).toFixed(1)}%`,
+                          "--rot": `${slot.rotate}deg`,
+                          animationDelay: `${i * 70}ms`,
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* wave-low/medium/high.png — crossfade mengikuti slider "Tinggi Gelombang" */}
+                  <div className="wave-layer" style={{ height: `${waveLayerHeight}%` }}>
+                    <div className="wave-fallback" />
+                    {waveDepths.map((depth) => (
+                      <div key={depth.className} className={`wave-copy ${depth.className}`}>
+                        <img src={waveLowImg} className="wave-img wave-low" alt="" style={{ opacity: waveMix.low * depth.opacityScale }} />
+                        <img src={waveMediumImg} className="wave-img wave-medium" alt="" style={{ opacity: waveMix.medium * depth.opacityScale }} />
+                        <img src={waveHighImg} className="wave-img wave-high" alt="" style={{ opacity: waveMix.high * depth.opacityScale }} />
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="lab-visual-caption">
-                    {pohonTerlihat}/{totalPohon} rumpun mangrove &middot; gelombang {kategori(wave).toLowerCase()}
+                    {pohonCount}/10 rumpun mangrove &middot; gelombang {kategori(wave).toLowerCase()}
                   </div>
 
                   {phase === "running" && (
@@ -828,7 +936,7 @@ export default function Simulasi() {
           )}
 
           {/* ================= RIWAYAT PERCOBAAN ================= */}
-          {history.length > 0 && (
+          {phase === "done" && history.length > 0 && (
             <section className="section" style={{ background: "var(--sand-deep)" }}>
               <div className="container">
                 <div className="section-head reveal">
@@ -854,17 +962,19 @@ export default function Simulasi() {
           )}
 
           {/* ================= CTA ================= */}
-          <section className="section" style={{ paddingTop: history.length > 0 ? 0 : undefined }}>
-            <div className="container">
-              <div className="cta-box reveal">
-                <div>
-                  <h3>Sudah paham hubungan sebab-akibatnya?</h3>
-                  <p>Uji pemahamanmu lewat Kuis Berpikir Kausal.</p>
+          {phase === "done" && result && (
+            <section className="section" style={{ paddingTop: history.length > 0 ? 0 : undefined }}>
+              <div className="container">
+                <div className="cta-box reveal">
+                  <div>
+                    <h3>Sudah paham hubungan sebab-akibatnya?</h3>
+                    <p>Uji pemahamanmu lewat Kuis Berpikir Kausal.</p>
+                  </div>
+                  <Link to="/kuis" className="btn btn-primary">Ke Kuis <ArrowIcon /></Link>
                 </div>
-                <Link to="/kuis" className="btn btn-primary">Ke Kuis <ArrowIcon /></Link>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
         </>
       )}
 
