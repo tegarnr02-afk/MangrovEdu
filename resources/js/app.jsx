@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./pages/ProtectedRoute";
 
 const Home = lazy(() => import("./pages/Home"));
 const Materi = lazy(() => import("./pages/Materi"));
@@ -56,11 +57,11 @@ root.render(
         {/* Sebelumnya "/register" — diganti "/daftar" supaya cocok dengan
             semua link "Daftar" di Navbar.jsx, AuthHeader.jsx, dan Login.jsx */}
         <Route path="/register" element={<Register />} />
-        <Route path="/materi/ekosistem-mangrove" element={<EkosistemMangrove />} />
-        <Route path="/materi/interaksi-ekosistem" element={<InteraksiEkosistem />} />
-        <Route path="/materi/perubahan-lingkungan" element={<PerubahanLingkungan />} />
-        <Route path="/materi/abrasi-pantai" element={<AbrasiPantai />} />
-        <Route path="/materi/konservasi-mangrove" element={<KonservasiMangrove />} />
+        <Route path="/materi/ekosistem-mangrove" element={<ProtectedRoute><EkosistemMangrove /></ProtectedRoute>} />
+        <Route path="/materi/interaksi-ekosistem" element={<ProtectedRoute><InteraksiEkosistem /></ProtectedRoute>} />
+        <Route path="/materi/perubahan-lingkungan" element={<ProtectedRoute><PerubahanLingkungan /></ProtectedRoute>} />
+        <Route path="/materi/abrasi-pantai" element={<ProtectedRoute><AbrasiPantai /></ProtectedRoute>} />
+        <Route path="/materi/konservasi-mangrove" element={<ProtectedRoute><KonservasiMangrove /></ProtectedRoute>} />
         <Route path="*" element={<ComingSoon />} />
       </Routes>
     </Suspense>

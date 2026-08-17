@@ -144,25 +144,57 @@ export default function Navbar({ forceSolid = false }) {
         header.navbar.scrolled .nav-cta:hover{ background:rgba(15,36,29,0.08); }
         .nav-mobile-auth{ display:none; }
         .burger{display:none; flex-direction:column; gap:5px; cursor:pointer; background:none; border:none;}
-        .burger span{width:24px; height:2px; background:var(--paper); transition:background .35s ease;}
+        .burger span{
+          width:24px; height:2px; background:var(--paper); border-radius:2px;
+          transition:background .35s ease, transform .3s ease, opacity .3s ease;
+        }
         header.navbar.scrolled .burger span{ background:var(--canopy); }
+        .burger.burger-open span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+        .burger.burger-open span:nth-child(2){ opacity:0; }
+        .burger.burger-open span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
 
         @media (max-width:980px){
-          .nav-links{ display:none; }
-          .nav-links.nav-links-open{
+          .nav-links{
             display:flex; position:absolute; top:100%; left:0; right:0; background:#F1F4EC;
             flex-direction:column; padding:24px 32px; gap:20px; border-bottom:1px solid rgba(15,36,29,0.08);
             color:var(--canopy);
+            opacity:0; visibility:hidden; transform:translateY(-14px);
+            transition:opacity .3s ease, transform .3s ease, visibility .3s ease;
+            pointer-events:none;
           }
+          .nav-links.nav-links-open{
+            opacity:1; visibility:visible; transform:translateY(0); pointer-events:auto;
+          }
+          .nav-links a{
+            opacity:0; transform:translateY(-6px);
+            transition:opacity .3s ease, transform .3s ease;
+          }
+          .nav-links.nav-links-open a{ opacity:0.92; transform:translateY(0); }
+          .nav-links.nav-links-open a:nth-child(1){ transition-delay:.04s; }
+          .nav-links.nav-links-open a:nth-child(2){ transition-delay:.08s; }
+          .nav-links.nav-links-open a:nth-child(3){ transition-delay:.12s; }
+          .nav-links.nav-links-open a:nth-child(4){ transition-delay:.16s; }
+          .nav-links.nav-links-open a:nth-child(5){ transition-delay:.2s; }
+          .nav-links.nav-links-open a:nth-child(6){ transition-delay:.24s; }
+          .nav-mobile-auth{
+            opacity:0; transform:translateY(-6px);
+            transition:opacity .3s ease .26s, transform .3s ease .26s;
+          }
+          .nav-links.nav-links-open .nav-mobile-auth{ opacity:1; transform:translateY(0); }
           .burger{ display:flex; }
           .nav-inner{ padding:14px 20px; }
           header.navbar.scrolled .nav-inner{ padding:12px 20px; }
           .logo{ font-size:1.1rem; }
           .logo-icon{ width:40px; height:40px; }
-          .nav-actions{ gap:6px; }
+          .nav-actions{ gap:10px; }
           .nav-actions > .nav-login,
-          .nav-actions > .nav-cta,
-          .nav-actions > .nav-user{ display:none; }
+          .nav-actions > .nav-cta{ display:none; }
+          .nav-actions > .nav-user{
+            gap:8px; color:var(--paper);
+          }
+          header.navbar.scrolled .nav-actions > .nav-user{ color:var(--canopy); }
+          .nav-actions > .nav-user .nav-user-name{ max-width:80px; font-size:0.82rem; }
+          .nav-actions > .nav-user .nav-logout{ display:none; }
           .nav-mobile-auth{
             display:flex; flex-direction:column; gap:10px; width:100%;
             margin-top:6px; padding-top:20px; border-top:1px solid rgba(15,36,29,0.1);
@@ -198,10 +230,6 @@ export default function Navbar({ forceSolid = false }) {
             <div className="nav-mobile-auth">
               {user ? (
                 <>
-                  <div className="nav-mobile-user">
-                    <span className="nav-user-avatar">{initials}</span>
-                    {user.name}
-                  </div>
                   <button className="nav-mobile-register" onClick={handleLogout}>Keluar</button>
                 </>
               ) : (
@@ -226,7 +254,7 @@ export default function Navbar({ forceSolid = false }) {
               </>
             )}
             <button
-              className="burger"
+              className={`burger ${menuOpen ? "burger-open" : ""}`}
               aria-label="Menu"
               onClick={() => setMenuOpen((o) => !o)}
             >

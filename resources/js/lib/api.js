@@ -13,4 +13,27 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Kalau server balas 401 (token expired/invalid), langsung hapus token dan
+// arahkan ke /login. /login & /register dikecualikan supaya percobaan
+// login gagal (password salah) tidak ikut memicu redirect paksa — itu
+// tetap ditangani sebagai pesan error biasa di form Login.jsx.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const url = error.config?.url || "";
+    const isAuthEndpoint = url.includes("/login") || url.includes("/register");
+
+    if (status === 401 && !isAuthEndpoint) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export default api;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import heroBg from "./hero-mangrove.png";
 import misiImg from "./misi.png";
 import Navbar from "./Navbar";
@@ -817,8 +818,8 @@ export default function Home() {
               Dasbor.
             </p>
             <div className="hero-btns">
-              <a href="#kuis" className="btn btn-primary">Mulai Belajar</a>
-              <a href="#lab" className="btn hero-btn-secondary">Eksplorasi Lab</a>
+              <Link to="/materi" className="btn btn-primary">Mulai Belajar</Link>
+              <Link to="/lab" className="btn hero-btn-secondary">Eksplorasi Lab</Link>
             </div>
           </div>
         </div>
@@ -1044,7 +1045,7 @@ export default function Home() {
         <div className="container">
           <h2>Siap Belajar Ekosistem Mangrove?</h2>
           <p>Mulai jelajahi materi, coba simulasi, dan uji pemahamanmu sekarang juga — gratis untuk semua siswa.</p>
-          <a href="#kuis" className="btn btn-primary">Mulai Belajar</a>
+          <Link to="/materi" className="btn btn-primary">Mulai Belajar</Link>
         </div>
       </section>
 

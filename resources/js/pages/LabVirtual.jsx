@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import api from "../lib/api";
@@ -8,6 +9,13 @@ import mangroveImg from "./mangrove.png";
 import waveLowImg from "./wave-low.png";
 import waveMediumImg from "./wave-medium.png";
 import waveHighImg from "./wave-high.png";
+
+const LockIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </svg>
+);
 
 /* ================= VISUAL ASSET =================
    Seluruh visualisasi memakai PNG yang sudah tersedia:
@@ -177,20 +185,11 @@ function CausalNode({ icon, label, value, note, fill, tone }) {
    HALAMAN UTAMA
 ================================================================ */
 export default function LabVirtual() {
+  const navigate = useNavigate();
+  const [loggedIn] = useState(() => !!localStorage.getItem("token"));
   const [density, setDensity] = useState(60);
   const [waveHeight, setWaveHeight] = useState(40);
   const [experimentCount, setExperimentCount] = useState(0);
-
-  // Ambil jumlah percobaan yang sudah tersimpan di database (bukan localStorage lagi).
-  useEffect(() => {
-    let cancelled = false;
-    api.get("/lab-virtual/eksperimen")
-      .then((res) => {
-        if (!cancelled) setExperimentCount(res.data?.data?.total ?? 0);
-      })
-      .catch(() => { /* biarkan tetap 0 kalau gagal ambil */ });
-    return () => { cancelled = true; };
-  }, []);
 
   const DEFAULT_DENSITY = 60;
   const DEFAULT_WAVE = 40;
@@ -228,21 +227,35 @@ export default function LabVirtual() {
     setWaveHeight(DEFAULT_WAVE);
   };
 
+  // Ambil jumlah percobaan dari database (bukan localStorage) saat halaman dibuka.
+  useEffect(() => {
+    if (!loggedIn) return;
+    api
+      .get("/lab-virtual/eksperimen")
+      .then((res) => setExperimentCount(res.data?.data?.total ?? 0))
+      .catch(() => {
+        /* biarkan tetap 0 kalau gagal memuat — bukan fatal untuk halaman ini */
+      });
+  }, [loggedIn]);
+
   // "🔬 Coba Kondisi Lain": catat eksperimen saat ini (kerapatan, gelombang,
-  // perlindungan, skor abrasi) ke database, lalu geser ke kombinasi lain
-  // agar siswa tidak hanya mengamati satu kondisi.
+  // perlindungan, skor abrasi) ke database lewat POST /lab-virtual/eksperimen,
+  // lalu geser ke kombinasi lain agar siswa tidak hanya mengamati satu kondisi.
   const handleTryOther = () => {
-    api.post("/lab-virtual/eksperimen", {
-      kerapatan_mangrove: density,
-      tinggi_gelombang: waveHeight,
-      perlindungan: protection,
-      skor_abrasi: abrasionScore,
-    })
-      .then((res) => {
-        if (typeof res.data?.total === "number") setExperimentCount(res.data.total);
-        else setExperimentCount((c) => c + 1);
+    api
+      .post("/lab-virtual/eksperimen", {
+        kerapatan_mangrove: density,
+        tinggi_gelombang: waveHeight,
+        perlindungan: protection,
+        skor_abrasi: abrasionScore,
       })
-      .catch(() => { /* tetap lanjut walau gagal tersimpan */ });
+      .then((res) => {
+        const total = res.data?.total;
+        setExperimentCount(total !== undefined ? total : (c) => c + 1);
+      })
+      .catch(() => {
+        /* kalau gagal simpan, tetap lanjut ganti kondisi supaya UX tidak macet */
+      });
 
     const presets = [
       [85, 20],
@@ -294,7 +307,7 @@ export default function LabVirtual() {
         .reveal{ opacity:0; transform:translateY(24px); transition:opacity .6s ease, transform .6s ease; }
         .reveal.show{ opacity:1; transform:translateY(0); }
 
-        .btn{ display:inline-flex; align-items:center; gap:8px; padding:13px 26px; border-radius:999px; font-weight:700; font-size:0.92rem; cursor:pointer; border:none; transition:transform .25s ease, box-shadow .25s ease, background .25s ease; font-family:'Plus Jakarta Sans', sans-serif; }
+        .btn{ display:inline-flex; align-items:center; gap:8px; padding:13px 26px; border-radius:999px; font-weight:700; font-size:0.92rem; cursor:pointer; border:none; white-space:nowrap; transition:transform .25s ease, box-shadow .25s ease, background .25s ease; font-family:'Plus Jakarta Sans', sans-serif; }
         .btn-primary{ background:var(--amber); color:var(--canopy); box-shadow:0 12px 24px -10px rgba(232,163,61,0.7); }
         .btn-primary:hover{ transform:translateY(-3px); box-shadow:0 16px 30px -10px rgba(232,163,61,0.85); }
         .btn-outline{ background:transparent; color:var(--estuary); border:1.5px solid rgba(47,107,87,0.35); }
@@ -501,10 +514,55 @@ export default function LabVirtual() {
           .control-panel{ order:1; }
           .obs-grid{ grid-template-columns:1fr; }
           .page-banner{ min-height:50vh; }
+          .page-banner .container{ padding-left:32px; }
         }
+        /* ===== Auth gate ===== */
+        .gate-card{
+          max-width:460px; margin:0 auto; text-align:center; background:var(--paper);
+          border-radius:var(--radius-lg); padding:48px 36px; box-shadow:0 20px 40px -20px rgba(15,36,29,0.2);
+        }
+        .gate-icon{
+          width:60px; height:60px; margin:0 auto 20px; border-radius:50%;
+          background:var(--tide-pale); color:var(--estuary);
+          display:flex; align-items:center; justify-content:center;
+        }
+        .gate-icon svg{ width:28px; height:28px; }
+        .gate-card p{ color:#556961; margin:12px 0 26px; }
+
         @media (max-width:600px){
           .container{ padding:0 20px; }
-          .viz-panel{ height:300px; }
+
+          .page-banner{ min-height:auto; padding:64px 0 76px; }
+          .page-banner .container{ padding-left:20px; padding-right:20px; }
+          .page-banner h1{ font-size:1.8rem; margin-bottom:12px; }
+          .page-banner p{ font-size:0.92rem; }
+
+          .lab-main{ padding:36px 0 60px; }
+          .viz-panel{ order:1; height:260px; border-radius:20px; }
+          .control-panel{ order:2; padding:22px 18px; border-radius:20px; }
+          .control-panel h3{ font-size:1rem; margin-bottom:18px; }
+          .slider-group{ margin-bottom:20px; }
+          .slider-label{ flex-wrap:wrap; row-gap:6px; }
+          .slider-name{ font-size:0.88rem; }
+          .slider-right{ flex-wrap:wrap; gap:6px; }
+          .control-actions .btn{ font-size:0.86rem; padding:12px 18px; }
+
+          .viz-readout{ font-size:0.68rem; padding:8px 12px; }
+
+          .obs-panel{ padding:24px 18px; margin-top:32px; border-radius:20px; }
+          .obs-panel h2{ font-size:1.2rem; }
+          .obs-card{ padding:14px 16px; gap:10px; }
+          .obs-card b{ font-size:1.1rem; }
+
+          .causal-panel{ padding:24px 18px; margin-top:20px; border-radius:20px; }
+          .causal-panel h2{ font-size:1.2rem; }
+          .causal-node{ padding:12px 14px; gap:10px; }
+          .causal-icon{ width:38px; height:38px; font-size:1.25rem; }
+
+          .note-panel{ padding:22px 18px; margin-top:20px; }
+          .note-panel h2{ font-size:1.05rem; }
+
+          .gate-card{ padding:36px 22px; }
         }
       `}</style>
 
@@ -521,6 +579,22 @@ export default function LabVirtual() {
         <WaveDividerLocal fill="var(--sand)" />
       </section>
 
+      {!loggedIn ? (
+        /* ================= AUTH GATE ================= */
+        <section className="section">
+          <div className="container">
+            <div className="gate-card reveal">
+              <div className="gate-icon"><LockIcon /></div>
+              <h3>Masuk Terlebih Dahulu</h3>
+              <p>Kamu perlu login untuk menjalankan eksperimen dan menyimpan riwayat percobaanmu.</p>
+              <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => navigate("/login")}>
+                Login Sekarang
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <>
       <section className="lab-main">
         <div className="container">
           <div className="lab-grid">
@@ -565,7 +639,7 @@ export default function LabVirtual() {
                 <button className="btn btn-primary" onClick={handleTryOther}>🔬 Coba Kondisi Lain</button>
               </div>
               {experimentCount > 0 && (
-                <p className="experiment-note">Sudah mencatat {experimentCount} percobaan di perangkat ini.</p>
+                <p className="experiment-note">Sudah mencatat {experimentCount} percobaan di akun ini.</p>
               )}
             </div>
 
@@ -671,6 +745,8 @@ export default function LabVirtual() {
           </div>
         </div>
       </section>
+        </>
+      )}
 
       <Footer />
     </>

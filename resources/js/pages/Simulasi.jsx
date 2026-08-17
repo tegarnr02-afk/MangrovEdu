@@ -362,7 +362,7 @@ export default function Simulasi() {
         .reveal.show{ opacity:1; transform:translateY(0); }
         .btn{
           display:inline-flex; align-items:center; gap:8px; padding:13px 26px; border-radius:999px;
-          font-weight:700; font-size:0.9rem; cursor:pointer; border:none;
+          font-weight:700; font-size:0.9rem; cursor:pointer; border:none; white-space:nowrap;
           transition:transform .25s ease, box-shadow .25s ease; font-family:'Plus Jakarta Sans', sans-serif;
         }
         .btn svg{ width:16px; height:16px; flex-shrink:0; }
@@ -616,6 +616,49 @@ export default function Simulasi() {
           .compare-grid{ grid-template-columns:1fr; }
           .interpretasi-wrap{ grid-template-columns:1fr; }
           .page-banner{ min-height:50vh; }
+          .page-banner .container{ padding-left:32px; }
+        }
+
+        @media (max-width:600px){
+          .container{ padding:0 20px; }
+
+          .page-banner{ min-height:auto; padding:64px 0 76px; }
+          .page-banner .container{ padding-left:20px; padding-right:20px; }
+          .page-banner h1{ font-size:1.8rem; margin-bottom:12px; }
+          .page-banner p{ font-size:0.92rem; }
+
+          .section{ padding:44px 0; }
+          .section-head{ margin-bottom:24px; }
+          .section-head h2{ font-size:1.4rem; }
+
+          /* Animasi di atas, panel kontrol/slider di bawah — sama seperti Lab Virtual */
+          .lab-grid{ gap:18px; }
+          .lab-visual{ order:1; min-height:240px; border-radius:20px; }
+          .lab-controls{ order:2; padding:22px 18px; border-radius:20px; }
+          .control-block + .control-block{ margin-top:22px; }
+          .run-btn{ margin-top:24px; padding:13px; font-size:0.88rem; }
+
+          .hasil-card{ padding:20px 16px; }
+          .hasil-value{ font-size:1.25rem; }
+
+          .compare-panel{ padding:20px 16px; }
+          .compare-layers{ font-size:1.1rem; }
+
+          .interpretasi-wrap{ gap:16px; }
+          .chain-panel{ padding:20px 16px; }
+          .chain-node{ min-width:0; width:100%; padding:10px 14px; }
+          .interpretasi-box{ padding:20px 18px; font-size:0.9rem; }
+
+          .grafik-box{ padding:20px 16px; }
+
+          .note-box{ padding:20px 18px; }
+
+          .riwayat-item{ flex-wrap:wrap; padding:12px 14px; }
+
+          .cta-box{ padding:30px 22px; flex-direction:column; align-items:flex-start; text-align:left; }
+          .cta-box .btn{ width:100%; justify-content:center; }
+
+          .gate-card{ padding:36px 22px; }
         }
       `}</style>
 

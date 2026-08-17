@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -62,11 +62,17 @@ const statusLabel = {
 };
 
 export default function Dasbor() {
+  const navigate = useNavigate();
+  const [loggedIn] = useState(() => !!localStorage.getItem("token"));
   const [status, setStatus] = useState({ loading: true, error: false, data: null });
   const [attempt, setAttempt] = useState(0);
 
   // Ambil data dasbor dari endpoint agregasi (GET /api/dashboard).
   useEffect(() => {
+    if (!loggedIn) {
+      setStatus({ loading: false, error: false, data: null });
+      return;
+    }
     let cancelled = false;
     setStatus({ loading: true, error: false, data: null });
 
@@ -147,7 +153,7 @@ export default function Dasbor() {
         .reveal.show{ opacity:1; transform:translateY(0); }
         .btn{
           display:inline-flex; align-items:center; gap:8px; padding:13px 26px; border-radius:999px;
-          font-weight:700; font-size:0.9rem; cursor:pointer; border:none;
+          font-weight:700; font-size:0.9rem; cursor:pointer; border:none; white-space:nowrap;
           transition:transform .25s ease, box-shadow .25s ease; font-family:'Plus Jakarta Sans', sans-serif;
         }
         .btn-primary{ background:var(--amber); color:var(--canopy); box-shadow:0 12px 24px -10px rgba(232,163,61,0.7); }
@@ -210,8 +216,7 @@ export default function Dasbor() {
         .progress-status{
           width:34px; height:34px; border-radius:50%; flex-shrink:0;
           display:flex; align-items:center; justify-content:center;
-        }
-        .progress-status svg{ width:16px; height:16px; }
+        }        .progress-status svg{ width:16px; height:16px; }
         .progress-status.selesai{ background:#E4EFE7; color:var(--estuary); }
         .progress-status.berjalan{ background:#FBEEDA; color:var(--amber-deep); }
         .progress-status.belum{ background:var(--sand); color:#9AAAA3; }
@@ -289,13 +294,57 @@ export default function Dasbor() {
           .stat-row{ grid-template-columns:repeat(2,1fr); margin-top:24px; }
           .badge-grid{ grid-template-columns:repeat(2,1fr); }
           .page-banner{ min-height:50vh; }
+          .page-banner .container{ padding-left:32px; }
         }
         @media (max-width:600px){
           .container{ padding:0 20px; }
-          .stat-row{ grid-template-columns:1fr; }
-          .badge-grid{ grid-template-columns:1fr; }
+          .stat-row{ grid-template-columns:repeat(2,1fr); margin-top:20px; gap:12px; }
+          .badge-grid{ grid-template-columns:repeat(2,1fr); gap:12px; }
           .quiz-history-row{ flex-direction:column; align-items:flex-start; gap:10px; }
+
+          .page-banner{ min-height:auto; padding:64px 0 76px; }
+          .page-banner .container{ padding-left:20px; padding-right:20px; }
+          .page-banner h1{ font-size:1.8rem; margin-bottom:12px; }
+          .page-banner p{ font-size:0.92rem; }
+
+          .section{ padding:44px 0; }
+          .section-head{ margin-bottom:22px; }
+          .section-head h2{ font-size:1.4rem; }
+
+          .stat-card{ padding:16px 14px; }
+          .stat-icon{ width:34px; height:34px; margin-bottom:10px; }
+          .stat-icon svg{ width:17px; height:17px; }
+          .stat-card strong{ font-size:1.25rem; }
+          .stat-card span{ font-size:0.76rem; }
+
+          .badge-card{ padding:18px 10px; }
+          .badge-icon{ width:44px; height:44px; margin-bottom:10px; }
+          .badge-icon svg{ width:19px; height:19px; }
+          .badge-card h4{ font-size:0.82rem; }
+          .badge-card p{ font-size:0.7rem; }
+
+          .progress-row{ flex-wrap:wrap; padding:16px; gap:12px; }
+          .progress-main{ min-width:0; }
+          .progress-main-top{ flex-direction:column; align-items:flex-start; gap:4px; }
+
+          .gate-card{ padding:36px 22px; }
+
+          .empty-state{ padding:36px 18px; }
+          .empty-state .btn{ padding:13px 22px; }
         }
+
+        /* ===== Auth gate ===== */
+        .gate-card{
+          max-width:460px; margin:0 auto; text-align:center; background:var(--paper);
+          border-radius:var(--radius-lg); padding:48px 36px; box-shadow:0 20px 40px -20px rgba(15,36,29,0.2);
+        }
+        .gate-icon{
+          width:60px; height:60px; margin:0 auto 20px; border-radius:50%;
+          background:var(--tide-pale); color:var(--estuary);
+          display:flex; align-items:center; justify-content:center;
+        }
+        .gate-icon svg{ width:28px; height:28px; }
+        .gate-card p{ color:#556961; margin:12px 0 26px; }
       `}</style>
 
       <Navbar />
@@ -313,7 +362,21 @@ export default function Dasbor() {
       </section>
 
       {/* ================= KONTEN UTAMA ================= */}
-      {status.loading ? (
+      {!loggedIn ? (
+        /* ================= AUTH GATE ================= */
+        <section className="section">
+          <div className="container">
+            <div className="gate-card reveal">
+              <div className="gate-icon"><LockIcon /></div>
+              <h3>Masuk Terlebih Dahulu</h3>
+              <p>Kamu perlu login untuk melihat progres belajar, aktivitas eksperimen, dan hasil kuismu.</p>
+              <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => navigate("/login")}>
+                Login Sekarang
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : status.loading ? (
         <div className="container">
           <div className="stat-row">
             {[0, 1, 2, 3].map((i) => (

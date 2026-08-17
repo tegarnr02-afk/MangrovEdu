@@ -131,20 +131,15 @@ class DashboardController extends Controller
      */
     protected function aktivitas(string $modelClass, int $userId): array
     {
-        $rows = $modelClass::query()
+        $agg = $modelClass::query()
             ->where('user_id', $userId)
-            ->get(['nilai']);
+            ->selectRaw('COUNT(*) as aktivitas, AVG(nilai) as nilai_rata')
+            ->first();
 
-        $aktivitas = $rows->count();
-
-        if ($aktivitas === 0) {
-            return ['aktivitas' => 0, 'nilai_rata' => null];
-        }
-
-        $nilai = $rows->pluck('nilai')->filter(fn ($v) => is_numeric($v));
-        $nilaiRata = $nilai->isNotEmpty() ? (int) round($nilai->avg()) : null;
-
-        return ['aktivitas' => $aktivitas, 'nilai_rata' => $nilaiRata];
+        return [
+            'aktivitas'  => (int) $agg->aktivitas,
+            'nilai_rata' => $agg->nilai_rata !== null ? (int) round($agg->nilai_rata) : null,
+        ];
     }
 
     /**
