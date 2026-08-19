@@ -261,6 +261,7 @@ export default function Home() {
       desc: "Pelajari karakteristik spesies mangrove dan unsur fisik pendukungnya, seperti salinitas, pasang surut air laut, dan tingkat kelembapan.",
       accent: "#2F6B57",
       accentBg: "#E4EFE7",
+      to: "/materi/ekosistem-mangrove",
     },
     {
       icon: <InteractionIcon />,
@@ -269,6 +270,7 @@ export default function Home() {
       accent: "#C97C1E",
       accentBg: "#FBEEDA",
       id: "materi",
+      to: "/materi/interaksi-ekosistem",
     },
     {
       icon: <RefreshIcon />,
@@ -276,6 +278,7 @@ export default function Home() {
       desc: "Analisis dampak abrasi pantai, perambahan lahan, serta perubahan iklim terhadap kelangsungan hutan mangrove.",
       accent: "#1E8A8C",
       accentBg: "#E1F1F1",
+      to: "/materi/perubahan-lingkungan",
     },
     {
       icon: <FlaskIcon />,
@@ -284,6 +287,7 @@ export default function Home() {
       accent: "#6C63B5",
       accentBg: "#EAE8F6",
       id: "simulasi",
+      to: "/lab",
     },
     {
       icon: <QuizIcon />,
@@ -292,6 +296,7 @@ export default function Home() {
       accent: "#C24A5F",
       accentBg: "#F8E4E7",
       id: "kuis",
+      to: "/kuis",
     },
     {
       icon: <DashboardIcon />,
@@ -300,6 +305,7 @@ export default function Home() {
       accent: "#1E8A8C",
       accentBg: "#E1F1F1",
       id: "dashboard",
+      to: "/dashboard",
     },
   ];
 
@@ -910,8 +916,8 @@ export default function Home() {
           </div>
           <div className="modul-grid">
             {modules.map((m, i) => (
-              <a
-                href="#"
+              <Link
+                to={m.to}
                 className="modul-card reveal"
                 key={i}
                 id={m.id}
@@ -921,7 +927,7 @@ export default function Home() {
                 <h4>{m.title}</h4>
                 <p>{m.desc}</p>
                 <span className="modul-link">Pelajari Selengkapnya <ArrowIcon /></span>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
