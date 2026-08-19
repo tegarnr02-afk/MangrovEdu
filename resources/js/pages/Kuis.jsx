@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import heroBg from "./konservasi-mangrove-sehat.png";
 
 /* ================= ICONS ================= */
 const ArrowIcon = () => (
@@ -35,6 +36,12 @@ const TrophyIcon = () => (
     <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
     <path d="M7 5H4a3 3 0 0 0 3 4M17 5h3a3 3 0 0 1-3 4" />
     <path d="M12 14v3M9 21h6M10 17h4v4h-4z" />
+  </svg>
+);
+const LockIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
   </svg>
 );
 
@@ -105,6 +112,8 @@ const questions = [
 const pgQuestions = questions.filter((q) => q.type === "pg");
 
 export default function Kuis() {
+  const navigate = useNavigate();
+  const [loggedIn] = useState(() => !!localStorage.getItem("token"));
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -198,12 +207,40 @@ export default function Kuis() {
         .btn-outline:hover{ background:var(--tide-pale); }
 
         /* ===== Banner ===== */
-        .page-banner{ background:var(--canopy); padding:130px 0 60px; }
-        .breadcrumb{ display:flex; align-items:center; gap:8px; font-size:0.85rem; color:rgba(251,250,245,0.65); margin-bottom:18px; }
-        .breadcrumb a:hover{ color:var(--amber); }
-        .breadcrumb span.current{ color:rgba(251,250,245,0.9); }
-        .page-banner h1{ color:var(--paper); font-size:clamp(1.9rem,3.6vw,2.7rem); max-width:640px; margin-bottom:14px; }
-        .page-banner p{ color:rgba(251,250,245,0.78); max-width:600px; }
+        .wave-divider{ position:absolute; left:0; right:0; bottom:-1px; line-height:0; pointer-events:none; z-index:5; }
+        .wave-divider svg{ display:block; width:100%; height:80px; }
+        .page-banner{
+          position:relative;
+          min-height:50vh;
+          display:flex; align-items:flex-end;
+          background-image:linear-gradient(90deg, rgba(10,22,17,0.86) 0%, rgba(10,22,17,0.62) 40%, rgba(10,22,17,0.3) 75%), url(${heroBg});
+          background-size:cover; background-position:center 32%;
+          padding:90px 0 90px;
+        }
+        .page-banner .container{
+          margin-left:0;
+          max-width:100%;
+          padding-left:60px;
+        }
+        .page-banner h1{
+          color:var(--paper); font-size:clamp(1.9rem,3.6vw,2.7rem); max-width:640px; margin-bottom:14px;
+        }
+        .page-banner p{
+          color:rgba(251,250,245,0.82); max-width:600px;
+        }
+
+        /* ===== Auth gate ===== */
+        .gate-card{
+          max-width:460px; margin:0 auto; text-align:center; background:var(--paper);
+          border-radius:var(--radius-lg); padding:48px 36px; box-shadow:0 20px 40px -20px rgba(15,36,29,0.2);
+        }
+        .gate-icon{
+          width:60px; height:60px; margin:0 auto 20px; border-radius:50%;
+          background:var(--tide-pale); color:var(--estuary);
+          display:flex; align-items:center; justify-content:center;
+        }
+        .gate-icon svg{ width:28px; height:28px; }
+        .gate-card p{ color:#556961; margin:12px 0 26px; }
 
         .section{ padding:64px 0 100px; }
 
@@ -303,10 +340,6 @@ export default function Kuis() {
       {/* ================= BANNER ================= */}
       <section className="page-banner">
         <div className="container">
-          <div className="breadcrumb reveal">
-            <Link to="/">Beranda</Link><span>/</span>
-            <span className="current">Kuis</span>
-          </div>
           <span className="eyebrow reveal" style={{ color: "var(--amber)" }}>Uji Pemahamanmu</span>
           <h1 className="reveal">Kuis Berpikir Kausal</h1>
           <p className="reveal">
@@ -314,7 +347,25 @@ export default function Kuis() {
             akibat, dan hubungan antar variabel dalam ekosistem mangrove.
           </p>
         </div>
+        <WaveDividerLocal fill="var(--sand)" />
       </section>
+
+      {!loggedIn ? (
+        /* ================= AUTH GATE ================= */
+        <section className="section">
+          <div className="container">
+            <div className="gate-card reveal">
+              <div className="gate-icon"><LockIcon /></div>
+              <h3>Masuk Terlebih Dahulu</h3>
+              <p>Kamu perlu login untuk mengerjakan kuis dan menyimpan hasilnya.</p>
+              <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => navigate("/login")}>
+                Login Sekarang
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <>
 
       {/* ================= KUIS ================= */}
       <section className="section">
@@ -427,8 +478,29 @@ export default function Kuis() {
           )}
         </div>
       </section>
+        </>
+      )}
 
       <Footer />
     </>
+  );
+}
+
+// Wave divider lokal — identik dengan komponen di Simulasi.jsx supaya bentuk
+// gelombang di bawah hero sama persis dengan halaman Simulasi.
+function WaveDividerLocal({ fill, flip = false }) {
+  return (
+    <div className="wave-divider" aria-hidden="true">
+      <svg
+        viewBox="0 0 1200 120"
+        preserveAspectRatio="none"
+        style={flip ? { transform: "scaleY(-1)" } : undefined}
+      >
+        <path
+          d="M0,32 C150,85 330,95 480,55 C650,10 820,0 1000,38 C1080,56 1150,50 1200,40 L1200,120 L0,120 Z"
+          fill={fill}
+        />
+      </svg>
+    </div>
   );
 }
