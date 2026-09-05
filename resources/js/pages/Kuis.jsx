@@ -81,6 +81,15 @@ const questions = [
     },
     q: "Berdasarkan data pada tabel tersebut, prediksikan penyebab utama rendahnya jumlah lubang kepiting di Titik B dibandingkan Titik A. Jelaskan alasanmu dengan menghubungkan kondisi mangrove, sedimen, dan habitat kepiting.",
     guidance: "Arahkan siswa menghubungkan: mangrove jarang → akar tidak lagi menahan/menyuburkan sedimen → lumpur menipis & mengeras → habitat lubang kepiting hilang → jumlah kepiting turun.",
+    jawabanIdeal: "Titik B memiliki jumlah lubang kepiting lebih sedikit karena kerapatan mangrovenya lebih rendah sehingga akar mangrove yang menjadi bagian dari habitat kepiting juga lebih sedikit. Selain itu, sedimen di Titik B lebih tipis dan mengeras sehingga kurang sesuai sebagai tempat hidup dan membuat lubang bagi kepiting. Akibatnya, jumlah lubang kepiting di Titik B lebih rendah dibandingkan Titik A.",
+    hubunganUtama: "Mangrove berkurang → kondisi sedimen/habitat berubah → habitat kepiting kurang sesuai → jumlah lubang kepiting menurun.",
+    poinKunci: [
+      { text: "Mangrove di B lebih jarang/kerapatan rendah", keywords: ["jarang", "kerapatan rendah", "tidak rapat", "sedikit mangrove", "berkurang"] },
+      { text: "Akar mangrove lebih sedikit", keywords: ["akar sedikit", "akar berkurang", "akar kurang", "akar tidak", "akar mangrove"] },
+      { text: "Sedimen di B tipis/mengeras", keywords: ["sedimen tipis", "lumpur tipis", "mengeras", "keras", "tipis"] },
+      { text: "Habitat kepiting kurang sesuai", keywords: ["habitat kepiting", "kurang sesuai", "tidak sesuai", "tidak cocok", "habitat berkurang"] },
+      { text: "Jumlah lubang kepiting menjadi lebih sedikit", keywords: ["lubang kepiting sedikit", "kepiting berkurang", "kepiting menurun", "lubang sedikit"] },
+    ],
   },
   {
     id: 4, indikator: "Cause Predicting", type: "pg",
@@ -98,6 +107,15 @@ const questions = [
     id: 5, indikator: "Cause Predicting", type: "uraian",
     q: "Seorang siswa melakukan pengamatan burung di dua kawasan pesisir. Kawasan pertama memiliki hutan mangrove yang luas dan beragam jenis pohonnya. Kawasan kedua adalah bekas hutan mangrove yang sudah berubah menjadi tambak terbuka. Hasil pengamatan menunjukkan jumlah jenis burung yang hinggap di kawasan pertama jauh lebih banyak daripada kawasan kedua.\n\nPrediksikan dua kemungkinan penyebab perbedaan jumlah jenis burung tersebut, kaitkan jawabanmu dengan ketersediaan makanan dan tempat berlindung bagi burung.",
     guidance: "Dua arah jawaban: (1) keragaman pohon mangrove → lebih banyak sumber makanan (serangga, ikan kecil, buah) bagi berbagai jenis burung; (2) struktur vegetasi rapat → lebih banyak tempat berlindung/bersarang, sedangkan tambak terbuka minim vegetasi dan perlindungan.",
+    jawabanIdeal: "Jumlah jenis burung di kawasan pertama lebih banyak karena hutan mangrove yang luas dan memiliki beragam jenis pohon menyediakan lebih banyak sumber makanan serta tempat berlindung atau bersarang bagi burung. Sebaliknya, kawasan yang berubah menjadi tambak terbuka memiliki ketersediaan makanan dan tempat berlindung yang lebih terbatas sehingga jenis burung yang dapat hidup atau singgah di kawasan tersebut lebih sedikit.",
+    hubunganUtama: "Mangrove luas dan beragam → makanan + tempat berlindung tersedia → lebih banyak jenis burung.",
+    poinKunci: [
+      { text: "Mangrove luas/beragam", keywords: ["luas", "beragam", "banyak jenis pohon", "hutan mangrove"] },
+      { text: "Sumber makanan lebih banyak/beragam", keywords: ["makanan", "sumber makanan", "pakan", "serangga", "buah"] },
+      { text: "Tempat berlindung/bersarang tersedia", keywords: ["berlindung", "bersarang", "tempat tinggal", "naungan", "sarang"] },
+      { text: "Tambak terbuka habitatnya lebih terbatas", keywords: ["tambak terbuka", "terbatas", "minim vegetasi", "tidak ada pohon", "gundul"] },
+      { text: "Menyebabkan perbedaan jumlah jenis burung", keywords: ["jenis burung", "jumlah burung", "populasi burung", "burung lebih"] },
+    ],
   },
   // ===== Indikator 2: Effect Determining (Menentukan Akibat) =====
   {
@@ -116,6 +134,15 @@ const questions = [
     id: 7, indikator: "Effect Determining", type: "uraian",
     q: "Sebuah kawasan pantai kehilangan hampir seluruh mangrovenya akibat pembukaan lahan. Dua tahun kemudian, gelombang laut mulai mengikis daratan hingga beberapa rumah warga di dekat pantai retak akibat tanah di bawahnya tergerus.\n\nJelaskan rentetan akibat (secara berurutan) mulai dari hilangnya mangrove hingga terjadinya kerusakan rumah warga tersebut. Sertakan minimal tiga tahapan hubungan sebab-akibat dalam penjelasanmu.",
     guidance: "Rantai minimal 3 tahap: mangrove hilang → akar penahan sedimen & peredam gelombang hilang → gelombang menghantam garis pantai langsung → abrasi/pengikisan tanah pesisir → tanah di bawah rumah warga tergerus → rumah retak/rusak.",
+    jawabanIdeal: "Hilangnya mangrove menyebabkan akar mangrove yang berfungsi menahan sedimen berkurang. Akibatnya, tanah di pantai lebih mudah terkikis oleh gelombang sehingga abrasi meningkat. Daratan kemudian semakin terkikis dan tanah di bawah rumah menjadi tidak stabil sehingga beberapa rumah warga mengalami keretakan atau kerusakan.",
+    hubunganUtama: "Mangrove hilang → akar penahan sedimen berkurang → abrasi meningkat → daratan terkikis → rumah rusak.",
+    poinKunci: [
+      { text: "Mangrove hilang/berkurang", keywords: ["mangrove hilang", "mangrove habis", "tidak ada mangrove", "mangrove berkurang"] },
+      { text: "Akar penahan sedimen berkurang/hilang", keywords: ["akar", "penahan sedimen", "menahan tanah", "menahan sedimen"] },
+      { text: "Gelombang lebih mudah mencapai pantai", keywords: ["gelombang", "ombak", "hantaman", "menghantam"] },
+      { text: "Abrasi/pengikisan tanah meningkat", keywords: ["abrasi", "pengikisan", "erosi", "terkikis", "tergerus"] },
+      { text: "Rumah warga retak/rusak", keywords: ["rumah retak", "rumah rusak", "rumah warga", "retak"] },
+    ],
   },
   {
     id: 8, indikator: "Effect Determining", type: "pg",
@@ -132,7 +159,15 @@ const questions = [
   {
     id: 9, indikator: "Effect Determining", type: "uraian",
     q: "Warga di sekitar kawasan mangrove terbiasa membuang sampah plastik ke aliran sungai yang bermuara di hutan mangrove. Lama-kelamaan, sampah plastik tersebut menumpuk dan menutupi akar-akar napas (pneumatofor) pohon mangrove.\n\nJelaskan rentetan akibat yang mungkin terjadi terhadap pohon mangrove, kondisi tanah, dan organisme yang hidup di sekitarnya jika kondisi ini dibiarkan terus-menerus.",
-    guidance: "Arahkan ke: akar napas tertutup sampah → pertukaran oksigen terganggu → pohon stres/mati perlahan → tutupan vegetasi berkurang → sedimen tidak lagi tertahan & kualitas tanah menurun → habitat organisme bentik & lainnya rusak → keanekaragaman hayati menurun.",
+    jawabanIdeal: "Sampah plastik yang menutupi akar napas mangrove dapat mengganggu fungsi akar sehingga pertumbuhan dan kesehatan mangrove terganggu. Jika kondisi tersebut terus berlangsung, mangrove dapat mengalami kerusakan atau mati. Berkurangnya kondisi mangrove kemudian dapat mengubah kondisi tanah dan mengganggu habitat organisme di sekitarnya. Organisme yang bergantung pada mangrove sebagai tempat hidup, berlindung, atau mencari makanan juga dapat mengalami penurunan jumlah atau keanekaragaman.",
+    hubunganUtama: "Sampah → akar napas terganggu → mangrove terganggu/rusak → habitat berubah → organisme terganggu.",
+    poinKunci: [
+      { text: "Sampah plastik menutupi akar napas/pneumatofor", keywords: ["sampah", "menutupi akar", "pneumatofor", "akar napas", "akar tertutup"] },
+      { text: "Fungsi/pertumbuhan mangrove terganggu", keywords: ["fungsi terganggu", "pertumbuhan terganggu", "terhambat", "kesehatan terganggu"] },
+      { text: "Mangrove rusak atau dapat mati", keywords: ["mangrove mati", "mangrove rusak", "mati", "kerusakan"] },
+      { text: "Kondisi tanah/habitat berubah/terganggu", keywords: ["tanah berubah", "habitat terganggu", "kualitas tanah", "sedimen"] },
+      { text: "Organisme di sekitar ikut terganggu/berkurang", keywords: ["organisme", "hewan berkurang", "keanekaragaman menurun", "berkurang"] },
+    ],
   },
   {
     id: 10, indikator: "Effect Determining", type: "pg",
@@ -171,7 +206,15 @@ const questions = [
       ],
     },
     q: "Identifikasi dan jelaskan hubungan antara kerapatan mangrove dengan jumlah kepiting dan jenis ikan kecil pada ketiga kawasan tersebut. Kaitkan jawabanmu dengan fungsi mangrove sebagai penyedia habitat.",
-    guidance: "Pola yang diharapkan: semakin rapat mangrove → semakin tinggi jumlah kepiting & jenis ikan kecil (hubungan berbanding lurus), karena kerapatan akar & vegetasi menyediakan lebih banyak ruang berlindung, sumber makanan, dan tempat berkembang biak.",
+    jawabanIdeal: "Terdapat hubungan bahwa semakin tinggi kerapatan mangrove, semakin banyak jumlah kepiting dan jenis ikan kecil yang ditemukan. Kawasan P yang memiliki mangrove sangat rapat memiliki jumlah kepiting dan jenis ikan kecil paling tinggi, sedangkan kawasan R yang mangrovenya sangat jarang memiliki jumlah paling rendah. Hal ini menunjukkan bahwa kerapatan mangrove berkaitan dengan ketersediaan habitat. Mangrove yang lebih rapat menyediakan lebih banyak tempat berlindung dan ruang hidup bagi kepiting dan ikan kecil sehingga mendukung keberadaan organisme tersebut.",
+    hubunganUtama: "Kerapatan mangrove meningkat → habitat lebih tersedia → kepiting dan ikan kecil lebih banyak/beragam.",
+    poinKunci: [
+      { text: "Ada hubungan kerapatan mangrove & jumlah organisme", keywords: ["hubungan", "berkaitan", "berpengaruh", "semakin"] },
+      { text: "Semakin rapat mangrove → semakin banyak organisme", keywords: ["semakin rapat", "semakin banyak", "berbanding lurus", "meningkat"] },
+      { text: "Mangrove menyediakan habitat/tempat hidup", keywords: ["habitat", "tempat hidup", "menyediakan"] },
+      { text: "Mangrove menyediakan tempat berlindung/ruang hidup", keywords: ["berlindung", "ruang hidup", "tempat berlindung", "perlindungan"] },
+      { text: "Data kawasan P/R mendukung hubungan tersebut", keywords: ["kawasan p", "kawasan r", "sangat rapat", "sangat jarang", "data"] },
+    ],
   },
   {
     id: 13, indikator: "Cause Identifying", type: "pg",
@@ -189,6 +232,16 @@ const questions = [
     id: 14, indikator: "Cause Identifying", type: "uraian",
     q: "Dua kawasan pantai bertetangga mengalami hantaman gelombang besar akibat cuaca ekstrem. Kawasan pertama yang memiliki sabuk mangrove lebar hanya mengalami sedikit pengikisan tanah, sedangkan kawasan kedua yang mangrovenya sudah gundul mengalami abrasi parah hingga sebagian lahan warga hilang.\n\nIdentifikasi penyebab perbedaan tingkat kerusakan di kedua kawasan tersebut. Jelaskan keterkaitan antara keberadaan mangrove, kekuatan gelombang yang sampai ke daratan, dan tingkat abrasi yang terjadi.",
     guidance: "Arahkan ke: sabuk mangrove lebar meredam/memecah energi gelombang sebelum mencapai daratan → dampak ke tanah kecil; tanpa mangrove, gelombang penuh menghantam garis pantai langsung → abrasi parah.",
+    jawabanIdeal: "Kawasan pertama mengalami kerusakan yang lebih sedikit karena memiliki sabuk mangrove yang lebar. Struktur dan akar mangrove membantu mengurangi energi gelombang yang mencapai daratan serta membantu menahan tanah/sedimen. Sebaliknya, kawasan kedua yang mangrovenya gundul tidak memiliki perlindungan tersebut sehingga gelombang lebih mudah mencapai daratan dan menyebabkan pengikisan tanah serta abrasi yang lebih parah.",
+    hubunganUtama: "Mangrove ada → energi gelombang berkurang → tanah terlindungi → abrasi rendah. Mangrove gundul → gelombang mudah mencapai daratan → abrasi meningkat.",
+    poinKunci: [
+      { text: "Kawasan pertama punya mangrove lebar/lebat", keywords: ["mangrove lebar", "mangrove lebat", "sabuk mangrove", "mangrove ada"] },
+      { text: "Mangrove mengurangi energi gelombang", keywords: ["meredam gelombang", "mengurangi energi", "memecah gelombang", "meredam"] },
+      { text: "Mangrove menahan tanah/sedimen", keywords: ["menahan tanah", "menahan sedimen", "melindungi", "penahan"] },
+      { text: "Kawasan kedua mangrovenya gundul", keywords: ["gundul", "tidak ada mangrove", "mangrove hilang", "tanpa mangrove"] },
+      { text: "Gelombang lebih mudah mencapai daratan", keywords: ["gelombang mencapai daratan", "langsung menghantam", "gelombang penuh"] },
+      { text: "Abrasi di kawasan kedua lebih parah", keywords: ["abrasi parah", "kerusakan parah", "erosi parah", "pengikisan parah"] },
+    ],
   },
   {
     id: 15, indikator: "Cause Identifying", type: "pg",
@@ -212,6 +265,58 @@ function getCategory(pct) {
   if (pct >= 75) return { label: "Baik", emoji: "👍", color: "#CE8324", bg: "#FBEEDA", msg: "Bagus! Kamu memahami sebagian besar hubungan sebab-akibat dengan baik." };
   if (pct >= 60) return { label: "Cukup", emoji: "📚", color: "#1E8A8C", bg: "#E1F1F1", msg: "Cukup baik. Ulangi beberapa materi untuk memperkuat pemahaman kausalmu." };
   return { label: "Perlu Belajar Lagi", emoji: "💪", color: "#C24A5F", bg: "#F8E4E7", msg: "Jangan menyerah! Pelajari kembali hubungan sebab-akibat dan coba lagi." };
+}
+
+/* =========================================================
+   UTIL: penilaian otomatis uraian (pencocokan kata kunci +
+   kata penghubung sebab-akibat, mengikuti bahasa kunci jawaban)
+   ========================================================= */
+
+// Kata penghubung sebab-akibat — dipakai sebagai penanda siswa
+// benar-benar "menghubungkan" poin-poin, bukan cuma menyebutnya lepas
+const CONNECTOR_WORDS = [
+  "karena", "sehingga", "akibatnya", "menyebabkan",
+  "sebab", "dampaknya", "maka", "mengakibatkan", "berakibat",
+  "yang berujung", "yang membuat", "akibat dari", "oleh karena",
+];
+
+function normalizeText(str) {
+  return (str || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function scoreUraian(answerText, poinKunci) {
+  const normalized = normalizeText(answerText);
+
+  const matched = poinKunci.map((poin) => {
+    const found = poin.keywords.some((kw) => normalized.includes(normalizeText(kw)));
+    return { ...poin, found };
+  });
+  const matchedCount = matched.filter((p) => p.found).length;
+  const hasConnector = CONNECTOR_WORDS.some((w) => normalized.includes(normalizeText(w)));
+
+  // Kriteria persis mengikuti bahasa dokumen kunci jawaban:
+  // - Salah    : tidak ada poin kunci yang relevan sama sekali
+  // - Benar    : minimal 2 poin kunci ketemu DAN ada kata penghubung
+  //              (menunjukkan siswa merangkai poin jadi satu hubungan sebab-akibat,
+  //               bukan cuma menyebut fakta lepas)
+  // - Sebagian : sisanya — ada poin kunci yang disebut, tapi belum dirangkai
+  //              jadi hubungan yang jelas (baru 1 poin, atau >1 poin tapi tanpa
+  //              kata penghubung)
+  let level, weight;
+  if (matchedCount === 0) {
+    level = "salah"; weight = 0;
+  } else if (matchedCount >= 2 && hasConnector) {
+    level = "benar"; weight = 1;
+  } else {
+    level = "sebagian"; weight = 0.5;
+  }
+
+  return { matched, matchedCount, total: poinKunci.length, hasConnector, level, weight };
 }
 
 /* =========================================================
@@ -305,13 +410,23 @@ export default function Kuis() {
     ? answers[q.id] !== undefined
     : (answers[q.id] !== undefined && String(answers[q.id]).trim().length > 0);
 
-  // Scoring: hanya dari soal PG (9 soal)
-  const pgQuestions = questions.filter(q => q.type === "pg");
-  const score = pgQuestions.reduce((acc, item) => (answers[item.id] === item.correct ? acc + 1 : acc), 0);
-  const totalPg = pgQuestions.length; // 9
-  const total = questions.length;     // 15
-  const pct = Math.round((score / totalPg) * 100);
+  // Scoring: semua 15 soal (PG + uraian) → skor + poin kunci
+  const results = questions.map((item) => {
+    if (item.type === "pg") {
+      const isCorrect = answers[item.id] === item.correct;
+      return { id: item.id, type: "pg", weight: isCorrect ? 1 : 0, level: isCorrect ? "benar" : "salah" };
+    } else {
+      const r = scoreUraian(answers[item.id], item.poinKunci);
+      return { id: item.id, type: "uraian", ...r };
+    }
+  });
+  const total = questions.length; // 15
+  const totalPoin = results.reduce((acc, r) => acc + r.weight, 0);
+  const pct = Math.round((totalPoin / total) * 100);
   const category = getCategory(pct);
+  const jumlahBenar = results.filter(r => r.level === "benar").length;
+  const jumlahSebagian = results.filter(r => r.level === "sebagian").length;
+  const jumlahSalah = results.filter(r => r.level === "salah").length;
 
   const navigate_question = useCallback((dir) => {
     if (animating) return;
@@ -340,18 +455,23 @@ export default function Kuis() {
 
     if (loggedIn) {
       try {
-        // Bangun array jawaban lengkap (PG: index int, uraian: teks string)
-        const jawabanArr = questions.map((item) => ({
-          soal_id: item.id,
-          tipe: item.type,
-          jawaban: answers[item.id] ?? null,
-        }));
         await api.post("/kuis/hasil", {
           skor: pct,
-          benar: score,
           total,
-          total_pg: totalPg,
-          jawaban: jawabanArr,
+          jumlah_benar: jumlahBenar,
+          jumlah_sebagian_benar: jumlahSebagian,
+          jumlah_salah: jumlahSalah,
+          jawaban: questions.map((item) => {
+            const r = results.find((x) => x.id === item.id);
+            return {
+              soal_id: item.id,
+              tipe: item.type,
+              jawaban: answers[item.id] ?? null,
+              level: r.level,
+              poin: r.weight,
+              ...(item.type === "uraian" ? { poin_kunci_ketemu: r.matchedCount, poin_kunci_total: r.total } : {}),
+            };
+          }),
         });
         if (bestScore === null || pct > bestScore) setBestScore(pct);
       } catch (e) {
@@ -694,8 +814,8 @@ export default function Kuis() {
         }
         .quiz-uraian-note{
           display:flex; align-items:flex-start; gap:8px; padding:11px 14px; border-radius:10px;
-          background:#FFF3D0; border:1px solid #f0d080; margin-top:10px;
-          font-size:0.80rem; color:#7a5800; line-height:1.55;
+          background:#E8F5EC; border:1px solid #b8dfbf; margin-top:10px;
+          font-size:0.80rem; color:#1a4a35; line-height:1.55;
         }
 
         /* ===== Time warning banner ===== */
@@ -715,12 +835,28 @@ export default function Kuis() {
         }
         .result-uraian-info strong{color:var(--canopy);}
 
+        /* ===== 3-stat row + partial ===== */
+        .result-stat-row-3{ grid-template-columns:1fr 1fr 1fr; }
+        .result-stat.partial{ background:#FFF3D0; color:#7a5800; }
+
+        /* ===== Uraian badge & checklist ===== */
+        .uraian-badge{
+          display:inline-block; padding:6px 14px; border-radius:999px;
+          font-size:0.8rem; font-weight:700; margin-top:10px;
+          font-family:'Plus Jakarta Sans',sans-serif;
+        }
+        .poin-kunci-checklist{ list-style:none; margin:10px 0 0; padding:0; font-size:0.85rem; }
+        .poin-kunci-checklist li{ padding:4px 0; }
+        .poin-kunci-checklist .poin-found{ color:#1a4a35; font-weight:600; }
+        .poin-kunci-checklist .poin-missing{ color:#8A9A93; }
+
         @media(max-width:768px){
           .page-banner .container{padding-left:24px; padding-right:24px;}
           .hero-stats{gap:12px;}
           .start-card, .result-card{padding:32px 24px;}
           .quiz-box{padding:28px 22px;}
           .result-stat-row{grid-template-columns:1fr;}
+          .result-stat-row-3{grid-template-columns:1fr;}
           .result-actions{flex-direction:column; align-items:stretch;}
           .result-actions .btn{justify-content:center;}
         }
@@ -751,7 +887,7 @@ export default function Kuis() {
           <div className="hero-stats reveal">
             <div className="hero-stat">
               <ClipboardIcon />
-              <span><strong>15</strong> Soal (9 PG + 6 Uraian)</span>
+              <span><strong>15</strong> Soal dinilai otomatis</span>
             </div>
             <div className="hero-stat">
               <ClockIcon />
@@ -859,9 +995,10 @@ export default function Kuis() {
         <section className="section">
           <div className="container">
             <ResultScreen
-              score={score}
+              jumlahBenar={jumlahBenar}
+              jumlahSebagian={jumlahSebagian}
+              jumlahSalah={jumlahSalah}
               total={total}
-              totalPg={totalPg}
               pct={pct}
               category={category}
               saving={saving}
@@ -870,6 +1007,7 @@ export default function Kuis() {
               onToggleReview={() => setShowReview((v) => !v)}
               answers={answers}
               questions={questions}
+              results={results}
             />
           </div>
         </section>
@@ -891,32 +1029,32 @@ function StartScreen({ onStart, bestScore }) {
       </div>
       <h2>Siap Mengerjakan Instrumen Berpikir Kausal?</h2>
       <p>
-        Instrumen ini terdiri dari <strong>15 soal</strong> — <strong>9 Pilihan Ganda</strong> yang dinilai otomatis
-        dan <strong>6 Uraian</strong> untuk refleksi berpikir kausal. Soal mencakup tiga indikator:
+        Instrumen ini terdiri dari <strong>15 soal</strong> yang <strong>dinilai otomatis</strong> —
+        9 Pilihan Ganda (PG) dan 6 Uraian berbasis kata kunci. Soal mencakup tiga indikator:
         memprediksi penyebab, menentukan akibat, dan mengidentifikasi penyebab dalam konteks ekosistem mangrove.
       </p>
 
       <div className="start-rule-row">
         <div className="start-rule-chip">
-          <ClipboardIcon /> 9 PG + 6 Uraian
+          <ClipboardIcon /> 15 Soal (PG + Uraian)
         </div>
         <div className="start-rule-chip">
           <ClockIcon /> Estimasi 60–90 Menit
         </div>
         {bestScore !== null && (
           <div className="start-rule-chip">
-            <StarIcon /> Skor PG Terbaik: {bestScore}
+            <StarIcon /> Skor Terbaik: {bestScore}
           </div>
         )}
       </div>
 
       <div className="start-rules">
         <p>📌 <strong>Panduan mengerjakan:</strong></p>
-        <p>• <strong>Soal PG (9 soal):</strong> pilih satu jawaban, akan dinilai otomatis.</p>
-        <p>• <strong>Soal Uraian (6 soal):</strong> ketikkan jawabanmu di kotak teks. Tidak dinilai otomatis — digunakan untuk refleksi dan review guru.</p>
+        <p>• <strong>Soal PG (9 soal):</strong> pilih satu jawaban, otomatis benar/salah.</p>
+        <p>• <strong>Soal Uraian (6 soal):</strong> ketikkan penjelasanmu — dinilai otomatis berdasarkan kelengkapan penjelasan sebab-akibat yang kamu tulis.</p>
         <p>• Kamu dapat berpindah antar soal — jawaban tersimpan otomatis di sesi ini.</p>
         <p>• Timer berjalan selama <strong>60 menit</strong>. Jika waktu habis, kamu <strong>tetap bisa menyelesaikan</strong> jawaban uraian sebelum mengumpulkan.</p>
-        <p>• Skor PG dan jawaban uraian akan disimpan otomatis ke Dasbor-mu.</p>
+        <p>• Skor akhir = total poin dari 15 soal, disimpan otomatis ke Dasbor-mu.</p>
       </div>
 
       <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center", fontSize: "1rem", padding: "16px" }} onClick={onStart}>
@@ -993,7 +1131,7 @@ function QuestionCard({ q, current, total, selectedAnswer, onSelect, onPrev, onN
             onChange={(e) => onSelect(e.target.value)}
           />
           <div className="quiz-uraian-note">
-            💡 Soal uraian tidak dinilai otomatis. Jawabanmu akan disimpan dan dapat direview oleh guru.
+            ✅ Jawabanmu akan dinilai otomatis berdasarkan kelengkapan penjelasan sebab-akibat yang kamu tulis.
           </div>
         </>
       ) : (
@@ -1036,7 +1174,7 @@ function QuestionCard({ q, current, total, selectedAnswer, onSelect, onPrev, onN
 /* =========================================================
    RESULT SCREEN COMPONENT
    ========================================================= */
-function ResultScreen({ score, total, totalPg, pct, category, saving, onReset, showReview, onToggleReview, answers, questions }) {
+function ResultScreen({ jumlahBenar, jumlahSebagian, jumlahSalah, total, pct, category, saving, onReset, showReview, onToggleReview, answers, questions, results }) {
   const radius = 58;
   const circ = 2 * Math.PI * radius;
   const strokeDash = circ - (pct / 100) * circ;
@@ -1069,19 +1207,19 @@ function ResultScreen({ score, total, totalPg, pct, category, saving, onReset, s
           <p>{category.msg}</p>
         </div>
 
-        <div className="result-stat-row">
+        <div className="result-stat-row result-stat-row-3">
           <div className="result-stat correct">
-            <CheckIcon /> Benar (dari {totalPg} PG)
-            <span className="result-stat-num">{score}</span>
+            <CheckIcon /> Benar
+            <span className="result-stat-num">{jumlahBenar}</span>
+          </div>
+          <div className="result-stat partial">
+            <span style={{ fontWeight: 700 }}>½</span> Sebagian
+            <span className="result-stat-num">{jumlahSebagian}</span>
           </div>
           <div className="result-stat wrong">
-            <XIcon /> Salah / Tidak Dijawab
-            <span className="result-stat-num">{totalPg - score}</span>
+            <XIcon /> Salah
+            <span className="result-stat-num">{jumlahSalah}</span>
           </div>
-        </div>
-        <div className="result-uraian-info">
-          👁 <strong>6 soal uraian</strong> tidak dinilai otomatis. Jawabanmu sudah disimpan dan dapat
-          direview oleh guru. Kamu bisa melihat jawabanmu kembali di bagian “Lihat Pembahasan” di bawah.
         </div>
 
         {saving && (
@@ -1142,35 +1280,52 @@ function ResultScreen({ score, total, totalPg, pct, category, saving, onReset, s
                       💡 <strong>Penjelasan:</strong> {item.explanation}
                     </div>
                   </>
-                ) : (
-                  <>
-                    {item.intro && <p className="quiz-stimulus-intro" style={{ marginBottom: 10 }}>{item.intro}</p>}
-                    {item.table && (
-                      <div className="quiz-table-wrap" style={{ marginBottom: 14 }}>
-                        <table className="quiz-data-table">
-                          <thead>
-                            <tr>{item.table.headers.map((h, i) => <th key={i}>{h}</th>)}</tr>
-                          </thead>
-                          <tbody>
-                            {item.table.rows.map((row, ri) => (
+                ) : (() => {
+                  const r = results.find((x) => x.id === item.id);
+                  const badgeStyle = {
+                    benar: { bg: "#E4EFE7", color: "#1a4a35", label: "✓ Benar" },
+                    sebagian: { bg: "#FFF3D0", color: "#7a5800", label: "◐ Sebagian Benar" },
+                    salah: { bg: "#F8E4E7", color: "#7A2E3C", label: "✗ Salah" },
+                  }[r?.level] || { bg: "#F8E4E7", color: "#7A2E3C", label: "✗ Salah" };
+                  return (
+                    <>
+                      {item.intro && <p className="quiz-stimulus-intro" style={{ marginBottom: 10 }}>{item.intro}</p>}
+                      {item.table && (
+                        <div className="quiz-table-wrap" style={{ marginBottom: 14 }}>
+                          <table className="quiz-data-table">
+                            <thead><tr>{item.table.headers.map((h, hi) => <th key={hi}>{h}</th>)}</tr></thead>
+                            <tbody>{item.table.rows.map((row, ri) => (
                               <tr key={ri}>{row.map((cell, ci) => <td key={ci}>{cell}</td>)}</tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            ))}</tbody>
+                          </table>
+                        </div>
+                      )}
+                      <div className="review-explain" style={{ marginTop: 8 }}>
+                        <strong>📝 Jawabanmu:</strong>
+                        <p style={{ marginTop: 8, whiteSpace: "pre-wrap", fontStyle: userAns ? "normal" : "italic", opacity: userAns ? 1 : 0.6 }}>
+                          {userAns ? String(userAns) : "(tidak diisi)"}
+                        </p>
                       </div>
-                    )}
-                    <div className="review-explain" style={{ marginTop: 8 }}>
-                      <strong>📝 Jawabanmu:</strong>
-                      <p style={{ marginTop: 8, whiteSpace: "pre-wrap", fontStyle: userAns ? "normal" : "italic", opacity: userAns ? 1 : 0.6 }}>
-                        {userAns ? String(userAns) : "(tidak diisi)"}
-                      </p>
-                    </div>
-                    <div className="review-explain" style={{ marginTop: 8, background: "#FFF3D0", borderColor: "#f0d080" }}>
-                      🤔 <strong>Panduan Jawaban (bukan kunci resmi):</strong>
-                      <p style={{ marginTop: 6 }}>{item.guidance}</p>
-                    </div>
-                  </>
-                )}
+                      <span className="uraian-badge" style={{ background: badgeStyle.bg, color: badgeStyle.color }}>
+                        {badgeStyle.label} · {r?.matchedCount ?? 0}/{r?.total ?? item.poinKunci?.length ?? 0} poin kunci ketemu
+                      </span>
+                      <div className="review-explain" style={{ marginTop: 10 }}>
+                        <strong>💡 Contoh jawaban yang baik:</strong>
+                        <p style={{ marginTop: 6 }}>{item.jawabanIdeal}</p>
+                        <ul className="poin-kunci-checklist">
+                          {(r?.matched ?? item.poinKunci?.map(p => ({ ...p, found: false })) ?? []).map((p, pi) => (
+                            <li key={pi} className={p.found ? "poin-found" : "poin-missing"}>
+                              {p.found ? "✓" : "○"} {p.text}
+                            </li>
+                          ))}
+                        </ul>
+                        <p style={{ marginTop: 8, fontStyle: "italic", fontSize: "0.85rem", color: "#556961" }}>
+                          Alur sebab-akibat: {item.hubunganUtama}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             );
           })}
