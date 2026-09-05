@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Materi4JawabanController;
 use App\Http\Controllers\Api\Materi5JawabanController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EksperimenLogController;
+use App\Http\Controllers\Api\KuisHasilController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -21,7 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/lab-virtual/eksperimen', [EksperimenLogController::class, 'index']);
-Route::post('/lab-virtual/eksperimen', [EksperimenLogController::class, 'store']);
+    Route::post('/lab-virtual/eksperimen', [EksperimenLogController::class, 'store']);
 
     Route::get('/materi/progress', [MateriProgressController::class, 'index']);
     Route::post('/materi/{slug}/complete', [MateriProgressController::class, 'complete']);
@@ -34,13 +35,16 @@ Route::post('/lab-virtual/eksperimen', [EksperimenLogController::class, 'store']
     Route::post('/materi2/jawaban', [Materi2JawabanController::class, 'store']);
 
     Route::get('/materi3/jawaban', [Materi3JawabanController::class, 'index']);
-Route::post('/materi3/jawaban', [Materi3JawabanController::class, 'store']);
-Route::get('/materi3/summary', [Materi3JawabanController::class, 'summary']);
+    Route::post('/materi3/jawaban', [Materi3JawabanController::class, 'store']);
+    Route::get('/materi3/summary', [Materi3JawabanController::class, 'summary']);
 
-Route::get('/materi4/jawaban', [Materi4JawabanController::class, 'index']);
-Route::post('/materi4/jawaban', [Materi4JawabanController::class, 'store']);
+    Route::get('/materi4/jawaban', [Materi4JawabanController::class, 'index']);
+    Route::post('/materi4/jawaban', [Materi4JawabanController::class, 'store']);
 
-Route::get('/materi5/jawaban', [Materi5JawabanController::class, 'index']);
-Route::post('/materi5/jawaban', [Materi5JawabanController::class, 'store']);
-Route::get('/materi5/summary', [Materi5JawabanController::class, 'summary']);
+    Route::get('/materi5/jawaban', [Materi5JawabanController::class, 'index']);
+    Route::post('/materi5/jawaban', [Materi5JawabanController::class, 'store']);
+    Route::get('/materi5/summary', [Materi5JawabanController::class, 'summary']);
+
+    Route::get('/kuis/hasil', [KuisHasilController::class, 'index']);
+    Route::post('/kuis/hasil', [KuisHasilController::class, 'store']);
 });

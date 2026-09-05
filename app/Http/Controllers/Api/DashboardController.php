@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\EksperimenLog;
+use App\Models\KuisHasil;
 use App\Models\Materi1Jawaban;
 use App\Models\Materi2Jawaban;
 use App\Models\Materi3Jawaban;
@@ -70,55 +71,61 @@ class DashboardController extends Controller
             }
 
             $items[] = [
-                'slug'       => $slug,
-                'urutan'     => $urutanKe,
-                'judul'      => $this->judul($slug),
-                'status'     => $status,
-                'aktivitas'  => $stats['aktivitas'],
+                'slug' => $slug,
+                'urutan' => $urutanKe,
+                'judul' => $this->judul($slug),
+                'status' => $status,
+                'aktivitas' => $stats['aktivitas'],
                 'nilai_rata' => $stats['nilai_rata'],
             ];
         }
 
-        $totalMateri   = count($urutan);
-        $selesaiCount  = count(array_intersect($urutan, $selesaiSlugs));
-        $progresTotal  = $totalMateri > 0
+        $totalMateri = count($urutan);
+        $selesaiCount = count(array_intersect($urutan, $selesaiSlugs));
+        $progresTotal = $totalMateri > 0
             ? (int) round(($selesaiCount / $totalMateri) * 100)
             : 0;
 
         // Eksperimen Lab Virtual — sekarang sudah tersimpan di database.
         $eksperimenTotal = EksperimenLog::where('user_id', $user->id)->count();
-        $eksperimenList  = EksperimenLog::where('user_id', $user->id)
+        $eksperimenList = EksperimenLog::where('user_id', $user->id)
             ->orderByDesc('created_at')
             ->limit(5)
             ->get(['kerapatan_mangrove', 'tinggi_gelombang', 'perlindungan', 'skor_abrasi', 'created_at']);
 
         return response()->json([
             'success' => true,
-            'data'    => [
+            'data' => [
                 'user' => [
-                    'name'  => $user->name,
+                    'name' => $user->name,
                     'email' => $user->email,
                 ],
                 'materi' => [
-                    'total'   => $totalMateri,
+                    'total' => $totalMateri,
                     'selesai' => $selesaiCount,
-                    'items'   => $items,
+                    'items' => $items,
                 ],
                 'progres_keseluruhan' => $progresTotal,
 
                 'eksperimen' => [
                     'tersedia' => $eksperimenTotal > 0,
-                    'total'    => $eksperimenTotal,
-                    'list'     => $eksperimenList,
+                    'total' => $eksperimenTotal,
+                    'list' => $eksperimenList,
                 ],
 
-                // Hasil kuis (Berpikir Kausal) belum tersimpan ke database.
-                'kuis' => [
-                    'tersedia'       => false,
-                    'dikerjakan'     => 0,
-                    'nilai_terakhir' => null,
-                    'nilai_terbaik'  => null,
-                ],
+                // Hasil kuis diambil dari tabel kuis_hasil.
+                'kuis' => (function () use ($user) {
+                    $kuisHasil = KuisHasil::where('user_id', $user->id)
+                        ->orderByDesc('created_at')
+                        ->get();
+                    $count = $kuisHasil->count();
+                    return [
+                        'tersedia' => $count > 0,
+                        'dikerjakan' => $count,
+                        'nilai_terakhir' => $kuisHasil->first()?->skor,
+                        'nilai_terbaik' => $count > 0 ? $kuisHasil->max('skor') : null,
+                    ];
+                })(),
             ],
         ]);
     }
@@ -137,7 +144,7 @@ class DashboardController extends Controller
             ->first();
 
         return [
-            'aktivitas'  => (int) $agg->aktivitas,
+            'aktivitas' => (int) $agg->aktivitas,
             'nilai_rata' => $agg->nilai_rata !== null ? (int) round($agg->nilai_rata) : null,
         ];
     }

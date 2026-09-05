@@ -66,28 +66,34 @@ export default function Dasbor() {
   const [loggedIn] = useState(() => !!localStorage.getItem("token"));
   const [status, setStatus] = useState({ loading: true, error: false, data: null });
   const [attempt, setAttempt] = useState(0);
+  const [kuisRiwayat, setKuisRiwayat] = useState({ loading: true, data: null });
 
   // Ambil data dasbor dari endpoint agregasi (GET /api/dashboard).
   useEffect(() => {
     if (!loggedIn) {
       setStatus({ loading: false, error: false, data: null });
+      setKuisRiwayat({ loading: false, data: null });
       return;
     }
     let cancelled = false;
     setStatus({ loading: true, error: false, data: null });
 
-    api
-      .get("/dashboard")
-      .then((res) => {
-        if (!cancelled) setStatus({ loading: false, error: false, data: res.data?.data ?? null });
+    // Fetch dashboard + riwayat kuis secara paralel
+    Promise.all([
+      api.get("/dashboard"),
+      api.get("/kuis/hasil"),
+    ])
+      .then(([dashRes, kuisRes]) => {
+        if (!cancelled) {
+          setStatus({ loading: false, error: false, data: dashRes.data?.data ?? null });
+          setKuisRiwayat({ loading: false, data: kuisRes.data?.data ?? null });
+        }
       })
       .catch(() => {
         if (!cancelled) setStatus({ loading: false, error: true, data: null });
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [attempt]);
 
   // Jalankan animasi .reveal setiap kali konten selesai dirender ulang.
@@ -290,6 +296,28 @@ export default function Dasbor() {
         .badge-card h4{ font-size:0.9rem; margin-bottom:6px; }
         .badge-card p{ font-size:0.76rem; color:#8A9A93; }
 
+        /* ===== Kuis riwayat ===== */
+        .kuis-summary-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+        .kuis-summary-card{
+          background:var(--paper); border:1px solid rgba(15,36,29,0.06); border-radius:16px; padding:18px 20px;
+        }
+        .kuis-summary-card strong{ display:block; font-family:'Fraunces',serif; font-size:1.5rem; color:var(--canopy); }
+        .kuis-summary-card span{ font-size:0.8rem; color:#556961; }
+        .quiz-history{ display:flex; flex-direction:column; gap:12px; }
+        .quiz-history-row{
+          display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px;
+          background:var(--paper); border:1px solid rgba(15,36,29,0.06); border-radius:14px; padding:16px 20px;
+          transition:transform .2s ease, box-shadow .2s ease;
+        }
+        .quiz-history-row:hover{ transform:translateY(-2px); box-shadow:0 8px 20px -12px rgba(15,36,29,0.2); }
+        .quiz-history-icon{ width:36px; height:36px; border-radius:10px; background:var(--tide-pale); color:var(--estuary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .quiz-history-icon svg{ width:18px; height:18px; }
+        .quiz-history-meta h4{ font-size:0.9rem; margin-bottom:3px; }
+        .quiz-history-date{ font-size:0.76rem; color:#8A9A93; }
+        .quiz-history-right{ text-align:right; }
+        .quiz-history-score{ font-family:'Space Mono',monospace; font-weight:700; font-size:1.1rem; color:var(--canopy); }
+        .quiz-history-tag{ display:inline-block; font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:999px; margin-top:4px; }
+
         @media (max-width:980px){
           .stat-row{ grid-template-columns:repeat(2,1fr); margin-top:24px; }
           .badge-grid{ grid-template-columns:repeat(2,1fr); }
@@ -483,15 +511,68 @@ export default function Dasbor() {
             <div className="container">
               <div className="section-head reveal">
                 <span className="eyebrow">Riwayat Kuis</span>
-                <h2>Hasil Kuis Berpikir Kausal</h2>
-                <p>Rekam jejak percobaan kuismu.</p>
+                <h2>Hasil Kuis Mangrove</h2>
+                <p>Rekam jejak percobaan kuis Ekosistem Mangrove-mu.</p>
               </div>
-              <div className="empty-state reveal">
-                <div className="empty-icon"><QuizIcon /></div>
-                <h3>Belum ada hasil kuis</h3>
-                <p>Hasil Kuis Berpikir Kausal belum tersimpan di database, jadi belum ada riwayat yang bisa ditampilkan.</p>
-                <Link to="/kuis" className="btn btn-primary" style={{ marginTop: 18 }}>Mulai Kuis <ArrowIcon /></Link>
-              </div>
+
+              {kuisRiwayat.loading ? (
+                // Skeleton loading
+                <div className="skeleton" style={{ height: 80, borderRadius: 14 }} />
+              ) : kuisRiwayat.data?.dikerjakan > 0 ? (
+                <>
+                  {/* Summary 3-stat */}
+                  <div className="kuis-summary-row reveal">
+                    <div className="kuis-summary-card">
+                      <strong>{kuisRiwayat.data.dikerjakan}x</strong>
+                      <span>Kuis Dikerjakan</span>
+                    </div>
+                    <div className="kuis-summary-card">
+                      <strong>{kuisRiwayat.data.nilai_terbaik ?? "—"}</strong>
+                      <span>Skor Terbaik</span>
+                    </div>
+                    <div className="kuis-summary-card">
+                      <strong>{kuisRiwayat.data.nilai_terakhir ?? "—"}</strong>
+                      <span>Skor Terakhir</span>
+                    </div>
+                  </div>
+
+                  {/* Daftar percobaan */}
+                  <div className="quiz-history">
+                    {(kuisRiwayat.data.riwayat ?? []).slice(0, 5).map((r, i) => {
+                      const tagColor =
+                        r.skor >= 90 ? { bg: "#E4EFE7", color: "#2F6B57", label: "Sangat Baik" } :
+                          r.skor >= 75 ? { bg: "#FBEEDA", color: "#CE8324", label: "Baik" } :
+                            r.skor >= 60 ? { bg: "#E1F1F1", color: "#1E8A8C", label: "Cukup" } :
+                              { bg: "#F8E4E7", color: "#C24A5F", label: "Perlu Belajar" };
+                      const tgl = new Date(r.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+                      return (
+                        <div className="quiz-history-row reveal" style={{ transitionDelay: `${i * 50}ms` }} key={r.id}>
+                          <div className="quiz-history-icon"><QuizIcon /></div>
+                          <div className="quiz-history-meta">
+                            <h4>Percobaan #{kuisRiwayat.data.dikerjakan - i}</h4>
+                            <div className="quiz-history-date">{tgl} · {r.benar}/{r.total} benar</div>
+                          </div>
+                          <div className="quiz-history-right">
+                            <div className="quiz-history-score">{r.skor}</div>
+                            <span className="quiz-history-tag" style={{ background: tagColor.bg, color: tagColor.color }}>{tagColor.label}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ textAlign: "center", marginTop: 22 }}>
+                    <Link to="/kuis" className="btn btn-primary" style={{ fontSize: "0.88rem" }}>Kerjakan Lagi <ArrowIcon /></Link>
+                  </div>
+                </>
+              ) : (
+                <div className="empty-state reveal">
+                  <div className="empty-icon"><QuizIcon /></div>
+                  <h3>Belum ada hasil kuis</h3>
+                  <p>Kerjakan kuis untuk menguji pemahamanmu tentang ekosistem mangrove. Hasilnya akan langsung tersimpan di sini.</p>
+                  <Link to="/kuis" className="btn btn-primary" style={{ marginTop: 18 }}>Mulai Kuis <ArrowIcon /></Link>
+                </div>
+              )}
             </div>
           </section>
 
