@@ -455,12 +455,12 @@ export default function Kuis() {
 
     if (loggedIn) {
       try {
+        const totalPg = questions.filter((item) => item.type === "pg").length;
         await api.post("/kuis/hasil", {
           skor: pct,
+          benar: jumlahBenar,
           total,
-          jumlah_benar: jumlahBenar,
-          jumlah_sebagian_benar: jumlahSebagian,
-          jumlah_salah: jumlahSalah,
+          total_pg: totalPg,
           jawaban: questions.map((item) => {
             const r = results.find((x) => x.id === item.id);
             return {
@@ -560,7 +560,7 @@ export default function Kuis() {
         .btn-primary:disabled{opacity:0.42; cursor:not-allowed; transform:none !important; box-shadow:none;}
         .btn-outline{background:transparent; color:var(--estuary); border:1.5px solid rgba(47,107,87,0.3);}
         .btn-outline:hover{background:var(--tide-pale);}
-        .btn-outline:disabled{opacity:0.4; cursor:not-allowed;}
+        .btn-outline:disabled{opacity:0.55; cursor:not-allowed;}
         .btn-ghost{background:transparent; color:#556961; border:1.5px solid rgba(15,36,29,0.12);}
         .btn-ghost:hover{background:var(--sand);}
 
@@ -865,8 +865,8 @@ export default function Kuis() {
           .page-banner{min-height:auto; padding:72px 0 80px;}
           .hero-stat{padding:8px 14px; font-size:0.82rem;}
           .quiz-option{padding:13px 15px; font-size:0.88rem;}
-          .quiz-nav-row{flex-direction:column-reverse; }
-          .quiz-nav-row .btn{width:100%; justify-content:center;}
+          .quiz-nav-row{flex-direction:row; gap:10px; margin-top:22px;}
+          .quiz-nav-row .btn{flex:1; justify-content:center; padding:13px 14px; font-size:0.84rem; white-space:nowrap;}
         }
       `}</style>
 
@@ -1159,7 +1159,6 @@ function QuestionCard({ q, current, total, selectedAnswer, onSelect, onPrev, onN
           className="btn btn-outline"
           onClick={onPrev}
           disabled={isFirst}
-          style={{ opacity: isFirst ? 0.38 : 1 }}
         >
           <ArrowLeftIcon /> Sebelumnya
         </button>
