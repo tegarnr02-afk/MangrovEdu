@@ -351,6 +351,9 @@ export default function Login() {
           transition:border-color .2s ease, background .2s ease, transform .2s ease;
         }
         .btn-google:hover{ background:#fff; border-color:rgba(15,36,29,0.28); transform:translateY(-1px); }
+        .btn-google:disabled{ cursor:default; opacity:0.7; }
+
+        .google-hidden-wrap{ position:fixed; top:-9999px; left:-9999px; }
 
         .spinner{
           width:16px; height:16px; border-radius:50%;
@@ -498,7 +501,6 @@ export default function Login() {
                   <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
                   Ingat saya
                 </label>
-                <Link to="/lupa-password" className="forgot-link">Lupa kata sandi?</Link>
               </div>
 
               <button
@@ -518,7 +520,11 @@ export default function Login() {
 
             <div className="login-divider">ATAU</div>
 
-            <button type="button" className="btn-google" onClick={() => { /* TODO: sambungkan ke Google OAuth */ }}>
+            <button
+              type="button"
+              className="btn-google"
+              disabled={status !== "idle"}
+            >
               <GoogleIcon /> Masuk dengan Google
             </button>
 

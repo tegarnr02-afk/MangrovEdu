@@ -367,6 +367,9 @@ export default function Register() {
           transition:border-color .2s ease, background .2s ease, transform .2s ease;
         }
         .btn-google:hover{ background:#fff; border-color:rgba(15,36,29,0.28); transform:translateY(-1px); }
+        .btn-google:disabled{ cursor:default; opacity:0.7; }
+
+        .google-hidden-wrap{ position:fixed; top:-9999px; left:-9999px; }
 
         .spinner{
           width:16px; height:16px; border-radius:50%;
@@ -581,7 +584,11 @@ export default function Register() {
 
             <div className="login-divider">ATAU</div>
 
-            <button type="button" className="btn-google" onClick={() => { /* TODO: sambungkan ke Google OAuth */ }}>
+            <button
+              type="button"
+              className="btn-google"
+              disabled={status !== "idle"}
+            >
               <GoogleIcon /> Daftar dengan Google
             </button>
 
