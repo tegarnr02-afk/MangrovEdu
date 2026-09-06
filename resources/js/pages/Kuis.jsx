@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import heroBg from "./konservasi-mangrove-sehat.png";
+import heroBg from "./konservasi-mangrove-sehat.webp";
 
 /* =========================================================
    ICONS

@@ -8,8 +8,8 @@ import imgSebelumPenebangan from "./mangrove-sebelum-penebangan.png";
 import imgSesudahPenebangan from "./mangrove-sesudah-penebangan.png";
 import imgSebelumPencemaran from "./mangrove-sebelum-pencemaran.png";
 import imgSesudahPencemaran from "./mangrove-sesudah-pencemaran.png";
-import imgSebelumPembangunan from "./mangrove-sebelum-pembangunan.png";
-import imgSesudahPembangunan from "./mangrove-sesudah-pembangunan.png";
+import imgSebelumPembangunan from "./mangrove-sebelum-pembangunan.webp";
+import imgSesudahPembangunan from "./mangrove-sesudah-pembangunan.webp";
 
 /* ================= ICONS ================= */
 const ArrowIcon = () => (

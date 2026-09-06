@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import heroBg from "./hero-mangrove.png";
-import misiImg from "./misi.png";
+import heroBg from "./hero-mangrove.webp";
+import misiImg from "./misi.webp";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 

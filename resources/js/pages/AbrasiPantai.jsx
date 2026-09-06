@@ -3,12 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import api from "../lib/api";
-import imgPantaiA from "./abrasi-pantai-a.png";
+import imgPantaiA from "./abrasi-pantai-a.webp";
 import imgPantaiB from "./abrasi-pantai-b.png";
-import imgAbrasiTahap1 from "./abrasi-tahap-1.png";
-import imgAbrasiTahap2 from "./abrasi-tahap-2.png";
-import imgAbrasiTahap3 from "./abrasi-tahap-3.png";
-import imgAbrasiTahap4 from "./abrasi-tahap-4.png";
+import imgAbrasiTahap1 from "./abrasi-tahap-1.webp";
+import imgAbrasiTahap2 from "./abrasi-tahap-2.webp";
+import imgAbrasiTahap3 from "./abrasi-tahap-3.webp";
+import imgAbrasiTahap4 from "./abrasi-tahap-4.webp";
 
 /* ===== ICONS ===== */
 const ArrowIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>);

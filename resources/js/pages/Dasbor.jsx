@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import api from "../lib/api";
-import heroBg from "./konservasi-mangrove-sehat.png";
+import heroBg from "./konservasi-mangrove-sehat.webp";
 
 /* ================= ICONS ================= */
 const ArrowIcon = () => (

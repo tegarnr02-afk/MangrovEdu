@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../lib/api"; // sesuaikan path jika file ini bukan di src/pages/
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import sceneImg from "./ekosistem-mangrove-scene.png";
+import sceneImg from "./ekosistem-mangrove-scene.webp";
 import imgCeriops from "./ceriops-tagal.png";
 import imgSonneratia from "./sonneratia-alba.png";
 import imgRhizophora from "./rhizophora-apiculata.png";

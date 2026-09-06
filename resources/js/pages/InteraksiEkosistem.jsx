@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import sceneImg from "./ekosistem-mangrove-scene.png";
+import sceneImg from "./ekosistem-mangrove-scene.webp";
 // Sesuaikan path ini kalau lokasi file axios instance-mu berbeda.
 import api from "../lib/api";
 

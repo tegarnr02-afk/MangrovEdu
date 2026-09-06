@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import heroBg from "./hero-mangrove.png";
+import heroBg from "./hero-mangrove.webp";
 import Navbar from "./Navbar";
 import api from "../lib/api";
 

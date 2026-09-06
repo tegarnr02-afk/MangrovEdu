@@ -3,8 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import api from "../lib/api";
-import imgMangroveSehat from "./konservasi-mangrove-sehat.png";
-import imgMangroveRusak from "./konservasi-mangrove-rusak.png";
+import imgMangroveSehat from "./konservasi-mangrove-sehat.webp";
+import imgMangroveRusak from "./konservasi-mangrove-rusak.webp";
 
 /* ===== ICONS ===== */
 const ArrowIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>);
