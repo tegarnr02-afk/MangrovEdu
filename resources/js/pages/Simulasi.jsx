@@ -4,10 +4,10 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import heroBg from "./konservasi-mangrove-sehat.webp";
 import backgroundImg from "./background.webp";
-import mangroveImg from "./mangrove.webp";
-import waveLowImg from "./wave-low.webp";
-import waveMediumImg from "./wave-medium.webp";
-import waveHighImg from "./wave-high.webp";
+import mangroveImg from "./mangrove.png";
+import waveLowImg from "./wave-low.png";
+import waveMediumImg from "./wave-medium.png";
+import waveHighImg from "./wave-high.png";
 
 /* ================= ICONS ================= */
 const ArrowIcon = () => (
